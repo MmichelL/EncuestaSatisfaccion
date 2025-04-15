@@ -6,6 +6,9 @@ import AdminLayout from './layouts/AdminLayout'
 // Componentes de autenticación
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
+// Páginas públicas
+import SurveyPage from './pages/public/SurveyPage'
+
 // Páginas de administración
 import DashboardPage from './pages/admin/DashboardPage'
 import SurveysPage from './pages/admin/SurveysPage'
@@ -13,8 +16,9 @@ import CreateSurveyPage from './pages/admin/surveys/CreateSurveyPage'
 import EditSurveyPage from './pages/admin/surveys/EditSurveyPage'
 import CodeBatchesPage from './pages/admin/CodeBatchesPage'
 import ProductCodesPage from './pages/admin/product-codes/ProductCodesPage'
-import SurveyResponsesPage from './pages/admin/SurveyResponsesPage'
-import SettingsPage from './pages/admin/SettingsPage'
+import SurveyResponsesPage from './pages/admin/survey-responses/SurveyResponsesPage'
+import SurveyResponseDetailPage from './pages/admin/survey-responses/SurveyResponseDetailPage'
+import SettingsPage from './pages/admin/settings/SettingsPage'
 import LoginPage from './pages/admin/LoginPage'
 
 /**
@@ -24,6 +28,10 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <div>Página de inicio pública</div>,
+  },
+  {
+    path: '/survey/:slug',
+    element: <SurveyPage />,
   },
   {
     path: '/admin/login',
@@ -64,6 +72,10 @@ export const router = createBrowserRouter([
       {
         path: 'survey-responses',
         element: <SurveyResponsesPage />,
+      },
+      {
+        path: 'survey-responses/:id',
+        element: <SurveyResponseDetailPage />,
       },
       {
         path: 'settings',
