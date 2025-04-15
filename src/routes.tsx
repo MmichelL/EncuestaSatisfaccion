@@ -9,8 +9,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 // Páginas de administración
 import DashboardPage from './pages/admin/DashboardPage'
 import SurveysPage from './pages/admin/SurveysPage'
+import CreateSurveyPage from './pages/admin/surveys/CreateSurveyPage'
+import EditSurveyPage from './pages/admin/surveys/EditSurveyPage'
 import CodeBatchesPage from './pages/admin/CodeBatchesPage'
-import ProductCodesPage from './pages/admin/ProductCodesPage'
+import ProductCodesPage from './pages/admin/product-codes/ProductCodesPage'
 import SurveyResponsesPage from './pages/admin/SurveyResponsesPage'
 import SettingsPage from './pages/admin/SettingsPage'
 import LoginPage from './pages/admin/LoginPage'
@@ -42,6 +44,14 @@ export const router = createBrowserRouter([
       {
         path: 'surveys',
         element: <SurveysPage />,
+      },
+      {
+        path: 'surveys/new',
+        element: <CreateSurveyPage />,
+      },
+      {
+        path: 'surveys/:id/edit',
+        element: <EditSurveyPage />,
       },
       {
         path: 'code-batches',
