@@ -1,60 +1,120 @@
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { useAuth } from '@/contexts/AuthContext'
+
+// Esquema de validación con Zod
+const loginSchema = z.object({
+  email: z.string().email('Ingresa un correo electrónico válido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+})
+
+// Tipo inferido del esquema
+type LoginFormValues = z.infer<typeof loginSchema>
+
 /**
  * Página de inicio de sesión para administradores
+ * Utiliza react-hook-form con validación Zod
  */
 export default function LoginPage() {
+  const { signIn } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Obtener la ruta a la que redirigir después del login
+  const from = location.state?.from?.pathname || '/admin'
+
+  // Configurar react-hook-form con validación Zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
+
+  // Manejar el envío del formulario
+  const onSubmit = async (data: LoginFormValues) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      const { error: signInError } = await signIn(data.email, data.password)
+
+      if (signInError) {
+        setError('Credenciales inválidas. Por favor, verifica tu correo y contraseña.')
+        return
+      }
+
+      // Redirigir al usuario a la página anterior o al dashboard
+      navigate(from, { replace: true })
+    } catch (err) {
+      setError('Ocurrió un error al iniciar sesión. Por favor, intenta de nuevo.')
+      console.error('Error de inicio de sesión:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Iniciar Sesión
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-center text-2xl">Iniciar Sesión</CardTitle>
+          <p className="text-center text-sm text-gray-500">
             Accede al panel de administración
           </p>
-        </div>
-        <form className="mt-8 space-y-6">
-          <div className="-space-y-px rounded-md shadow-sm">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Correo electrónico
-              </label>
-              <input
-                id="email-address"
-                name="email"
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-500">
+              {error}
+            </div>
+          )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                id="email"
                 type="email"
-                autoComplete="email"
-                required
-                className="relative block w-full rounded-t-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600"
-                placeholder="Correo electrónico"
+                placeholder="tu@email.com"
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="text-xs text-red-500">{errors.email.message}</p>
+              )}
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Contraseña
-              </label>
-              <input
+            <div className="space-y-2">
+              <Label htmlFor="password">Contraseña</Label>
+              <Input
                 id="password"
-                name="password"
                 type="password"
-                autoComplete="current-password"
-                required
-                className="relative block w-full rounded-b-md border-0 p-3 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-blue-600"
-                placeholder="Contraseña"
+                placeholder="••••••••"
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="text-xs text-red-500">{errors.password.message}</p>
+              )}
             </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              className="group relative flex w-full justify-center rounded-md bg-blue-600 px-3 py-3 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              Iniciar Sesión
-            </button>
-          </div>
-        </form>
-      </div>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
