@@ -3,10 +3,21 @@ import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { AlertCircle, CheckCircle, ArrowRight } from 'lucide-react'
+import { AlertCircle, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Progress } from '@/components/ui/progress'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Form,
   FormControl,
@@ -31,16 +42,57 @@ type ProductCodeFormValues = z.infer<typeof productCodeSchema>
 // Estados de la página
 type PageState = 'loading' | 'not-found' | 'code-required' | 'survey-display'
 
+// Interfaces para los datos de la encuesta
+interface Question {
+  id: string
+  section_id: string
+  question_text: string
+  question_type: 'text' | 'textarea' | 'single_choice' | 'multiple_choice' | 'rating' | 'scale'
+  options: string | null
+  is_required: boolean
+  question_order: number
+}
+
+interface Section {
+  id: string
+  survey_id: string
+  title: string
+  description: string | null
+  section_order: number
+  discount_percentage_cumulative: number
+  questions: Question[]
+}
+
+interface Survey {
+  id: string
+  name: string
+  description: string | null
+  slug: string
+  is_active: boolean
+  requires_product_code: boolean
+}
+
+// Tipo para las respuestas
+type AnswersMap = Record<string, string | string[]>
+
 /**
  * Página pública para mostrar y responder una encuesta
  */
 export default function SurveyPage() {
   const { slug } = useParams<{ slug: string }>()
   const [pageState, setPageState] = useState<PageState>('loading')
-  const [survey, setSurvey] = useState<any>(null)
+  const [survey, setSurvey] = useState<Survey | null>(null)
+  const [sections, setSections] = useState<Section[]>([])
   const [codeId, setCodeId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [validatingCode, setValidatingCode] = useState(false)
+
+  // Estados para la navegación y respuestas
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
+  const [answers, setAnswers] = useState<AnswersMap>({})
+  const [responseId, setResponseId] = useState<string | null>(null)
+  const [completedSections, setCompletedSections] = useState<Set<string>>(new Set())
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   // Configurar el formulario para el código de producto
   const form = useForm<ProductCodeFormValues>({
@@ -83,6 +135,8 @@ export default function SurveyPage() {
         if (data.requires_product_code) {
           setPageState('code-required')
         } else {
+          // Si no requiere código, cargar las secciones y preguntas
+          await fetchSectionsAndQuestions(data.id)
           setPageState('survey-display')
         }
       } catch (error) {
@@ -93,6 +147,31 @@ export default function SurveyPage() {
 
     fetchSurvey()
   }, [slug])
+
+  // Cargar las secciones y preguntas de la encuesta
+  const fetchSectionsAndQuestions = async (surveyId: string) => {
+    try {
+      setError(null)
+
+      const { data, error } = await supabase
+        .from('survey_sections')
+        .select('*, questions(*)')
+        .eq('survey_id', surveyId)
+        .order('section_order')
+        .order('question_order', { foreignTable: 'questions' })
+
+      if (error) throw error
+
+      if (!data || data.length === 0) {
+        throw new Error('No se encontraron secciones para esta encuesta')
+      }
+
+      setSections(data)
+    } catch (error: any) {
+      console.error('Error al cargar las secciones y preguntas:', error)
+      setError(error.message || 'Error al cargar las secciones y preguntas. Por favor, intenta de nuevo.')
+    }
+  }
 
   // Validar el código de producto
   const validateProductCode = async (data: ProductCodeFormValues) => {
@@ -115,8 +194,13 @@ export default function SurveyPage() {
       }
 
       if (responseData.success) {
-        // Guardar el ID del código validado y cambiar al estado de mostrar la encuesta
+        // Guardar el ID del código validado
         setCodeId(responseData.codeId)
+
+        // Cargar las secciones y preguntas
+        await fetchSectionsAndQuestions(survey.id)
+
+        // Cambiar al estado de mostrar la encuesta
         setPageState('survey-display')
       } else {
         // Mostrar el mensaje de error de la Edge Function
@@ -127,6 +211,174 @@ export default function SurveyPage() {
       setError(error.message || 'Error al validar el código. Por favor, intenta de nuevo.')
     } finally {
       setValidatingCode(false)
+    }
+  }
+
+  // Manejar el cambio de respuesta
+  const handleAnswerChange = (questionId: string, value: string | string[]) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }))
+  }
+
+  // Calcular el progreso de la encuesta
+  const calculateProgress = () => {
+    if (!sections || sections.length === 0) return 0
+
+    // Si no hay secciones completadas, devolver 0
+    if (completedSections.size === 0) return 0
+
+    // Encontrar el porcentaje de descuento acumulativo máximo entre las secciones completadas
+    let maxDiscount = 0
+    sections.forEach(section => {
+      if (completedSections.has(section.id)) {
+        maxDiscount = Math.max(maxDiscount, section.discount_percentage_cumulative)
+      }
+    })
+
+    return maxDiscount
+  }
+
+  // Navegar a la sección anterior
+  const goToPreviousSection = () => {
+    if (currentSectionIndex > 0) {
+      setCurrentSectionIndex(currentSectionIndex - 1)
+      setValidationError(null)
+    }
+  }
+
+  // Navegar a la siguiente sección
+  const goToNextSection = () => {
+    if (!sections || currentSectionIndex >= sections.length - 1) return
+
+    // Validar que todas las preguntas requeridas tengan respuesta
+    const currentSection = sections[currentSectionIndex]
+    const requiredQuestions = currentSection.questions.filter(q => q.is_required)
+
+    const unansweredQuestions = requiredQuestions.filter(q => {
+      const answer = answers[q.id]
+      return answer === undefined || answer === '' || (Array.isArray(answer) && answer.length === 0)
+    })
+
+    if (unansweredQuestions.length > 0) {
+      setValidationError(`Por favor, responde todas las preguntas obligatorias antes de continuar.`)
+      return
+    }
+
+    // Marcar la sección como completada
+    setCompletedSections(prev => {
+      const newSet = new Set(prev)
+      newSet.add(currentSection.id)
+      return newSet
+    })
+
+    // Avanzar a la siguiente sección
+    setCurrentSectionIndex(currentSectionIndex + 1)
+    setValidationError(null)
+  }
+
+  // Renderizar un input según el tipo de pregunta
+  const renderQuestionInput = (question: Question) => {
+    const value = answers[question.id] || ''
+
+    switch (question.question_type) {
+      case 'text':
+        return (
+          <Input
+            value={value as string}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            required={question.is_required}
+            placeholder="Tu respuesta"
+          />
+        )
+
+      case 'textarea':
+        return (
+          <Textarea
+            value={value as string}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            required={question.is_required}
+            placeholder="Tu respuesta"
+          />
+        )
+
+      case 'single_choice':
+        const singleOptions = question.options ? JSON.parse(question.options) : []
+        return (
+          <RadioGroup
+            value={value as string}
+            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            className="space-y-2"
+          >
+            {singleOptions.map((option: string, index: number) => (
+              <div key={index} className="flex items-center space-x-2">
+                <RadioGroupItem value={option} id={`${question.id}-${index}`} />
+                <label htmlFor={`${question.id}-${index}`} className="text-sm font-medium">
+                  {option}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
+        )
+
+      case 'multiple_choice':
+        const multipleOptions = question.options ? JSON.parse(question.options) : []
+        const selectedOptions = Array.isArray(value) ? value : []
+        return (
+          <div className="space-y-2">
+            {multipleOptions.map((option: string, index: number) => {
+              const isChecked = selectedOptions.includes(option)
+              return (
+                <div key={index} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${question.id}-${index}`}
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleAnswerChange(question.id, [...selectedOptions, option])
+                      } else {
+                        handleAnswerChange(
+                          question.id,
+                          selectedOptions.filter(item => item !== option)
+                        )
+                      }
+                    }}
+                  />
+                  <label
+                    htmlFor={`${question.id}-${index}`}
+                    className="text-sm font-medium"
+                  >
+                    {option}
+                  </label>
+                </div>
+              )
+            })}
+          </div>
+        )
+
+      case 'rating':
+      case 'scale':
+        const maxRating = 5
+        return (
+          <RadioGroup
+            value={value as string}
+            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            className="flex space-x-4"
+          >
+            {Array.from({ length: maxRating }, (_, i) => i + 1).map((rating) => (
+              <div key={rating} className="flex flex-col items-center">
+                <RadioGroupItem value={rating.toString()} id={`${question.id}-${rating}`} />
+                <label htmlFor={`${question.id}-${rating}`} className="mt-1 text-sm">
+                  {rating}
+                </label>
+              </div>
+            ))}
+          </RadioGroup>
+        )
+
+      default:
+        return <Input placeholder="Tu respuesta" />
     }
   }
 
@@ -211,6 +463,43 @@ export default function SurveyPage() {
         )
 
       case 'survey-display':
+        // Si no hay secciones, mostrar mensaje de carga
+        if (!sections || sections.length === 0) {
+          return (
+            <Card className="w-full max-w-3xl mx-auto">
+              <CardHeader>
+                <CardTitle>{survey?.name}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex justify-center py-6">
+                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+                <span className="ml-2">Cargando secciones y preguntas...</span>
+              </CardContent>
+            </Card>
+          )
+        }
+
+        // Obtener la sección actual
+        const currentSection = sections[currentSectionIndex]
+        if (!currentSection) {
+          return (
+            <Card className="w-full max-w-3xl mx-auto">
+              <CardHeader>
+                <CardTitle>{survey?.name}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>No se encontró la sección actual.</AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )
+        }
+
+        // Calcular el progreso
+        const progress = calculateProgress()
+
         return (
           <Card className="w-full max-w-3xl mx-auto">
             <CardHeader>
@@ -219,33 +508,64 @@ export default function SurveyPage() {
                 {survey?.description}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Alert variant="success" className="mb-4 bg-green-50 text-green-800 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle>Encuesta lista</AlertTitle>
-                <AlertDescription>
-                  {codeId 
-                    ? 'Código de producto validado correctamente. Ahora puedes completar la encuesta.' 
-                    : 'Puedes comenzar a completar la encuesta.'}
-                </AlertDescription>
-              </Alert>
+            <CardContent className="space-y-6">
+              {/* Barra de progreso */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Progreso</span>
+                  <span>{progress}%</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+              </div>
 
-              {/* Aquí iría el componente para mostrar y responder la encuesta */}
-              <div className="text-center py-8 text-gray-500">
-                <p>Aquí se mostraría el contenido de la encuesta.</p>
-                <p className="mt-2">
-                  <strong>ID de la encuesta:</strong> {survey?.id}
-                  {codeId && (
-                    <>
-                      <br />
-                      <strong>ID del código:</strong> {codeId}
-                    </>
-                  )}
-                </p>
+              {/* Título y descripción de la sección */}
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">{currentSection.title}</h2>
+                {currentSection.description && (
+                  <p className="text-gray-500">{currentSection.description}</p>
+                )}
+              </div>
+
+              {/* Mensaje de validación */}
+              {validationError && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Error de validación</AlertTitle>
+                  <AlertDescription>{validationError}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Preguntas */}
+              <div className="space-y-6">
+                {currentSection.questions.map((question) => (
+                  <div key={question.id} className="space-y-2">
+                    <div className="flex items-center gap-1">
+                      <label className="font-medium">
+                        {question.question_text}
+                        {question.is_required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                    </div>
+                    {renderQuestionInput(question)}
+                  </div>
+                ))}
               </div>
             </CardContent>
-            <CardFooter className="flex justify-center">
-              <Button>Comenzar Encuesta</Button>
+            <CardFooter className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={goToPreviousSection}
+                disabled={currentSectionIndex === 0}
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Sección Anterior
+              </Button>
+              <Button
+                onClick={goToNextSection}
+                disabled={currentSectionIndex >= sections.length - 1}
+              >
+                Siguiente Sección
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </CardFooter>
           </Card>
         )
