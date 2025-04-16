@@ -9,6 +9,14 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 // Páginas públicas
 import SurveyPage from './pages/public/SurveyPage'
 
+// Páginas de autenticación
+import LoginPage from './pages/auth/LoginPage'
+import RegisterPage from './pages/auth/RegisterPage'
+import ResetPasswordPage from './pages/auth/ResetPasswordPage'
+import UpdatePasswordPage from './pages/auth/UpdatePasswordPage'
+import VerifyEmailPage from './pages/auth/VerifyEmailPage'
+import AuthCallbackPage from './pages/auth/AuthCallbackPage'
+
 // Páginas de administración
 import DashboardPage from './pages/admin/DashboardPage'
 import SurveysPage from './pages/admin/SurveysPage'
@@ -19,7 +27,7 @@ import ProductCodesPage from './pages/admin/product-codes/ProductCodesPage'
 import SurveyResponsesPage from './pages/admin/survey-responses/SurveyResponsesPage'
 import SurveyResponseDetailPage from './pages/admin/survey-responses/SurveyResponseDetailPage'
 import SettingsPage from './pages/admin/settings/SettingsPage'
-import LoginPage from './pages/admin/LoginPage'
+import AdminLoginPage from './pages/admin/LoginPage'
 
 /**
  * Configuración de rutas de la aplicación
@@ -34,8 +42,32 @@ export const router = createBrowserRouter([
     element: <SurveyPage />,
   },
   {
-    path: '/admin/login',
+    path: '/auth/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/auth/register',
+    element: <RegisterPage />,
+  },
+  {
+    path: '/auth/reset-password',
+    element: <ResetPasswordPage />,
+  },
+  {
+    path: '/auth/update-password',
+    element: <UpdatePasswordPage />,
+  },
+  {
+    path: '/auth/verify',
+    element: <VerifyEmailPage />,
+  },
+  {
+    path: '/auth/callback',
+    element: <AuthCallbackPage />,
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLoginPage />,
   },
   {
     path: '/admin',

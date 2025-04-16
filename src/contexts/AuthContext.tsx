@@ -11,6 +11,22 @@ interface AuthContextType {
     error: Error | null
     data: { user: User | null; session: Session | null } | null
   }>
+  signInWithLink: (email: string, redirectTo?: string) => Promise<{
+    error: Error | null
+    data: { user: User | null; session: Session | null } | null
+  }>
+  signUp: (email: string, password: string, redirectTo?: string) => Promise<{
+    error: Error | null
+    data: { user: User | null; session: Session | null } | null
+  }>
+  resetPassword: (email: string, redirectTo?: string) => Promise<{
+    error: Error | null
+    data: any
+  }>
+  updatePassword: (newPassword: string) => Promise<{
+    error: Error | null
+    data: { user: User | null } | null
+  }>
   signOut: () => Promise<void>
 }
 
@@ -63,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Función para iniciar sesión
+  // Función para iniciar sesión con email y contraseña
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -73,6 +89,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { data, error }
     } catch (error) {
       console.error('Error al iniciar sesión:', error)
+      return { data: null, error: error as Error }
+    }
+  }
+
+  // Función para iniciar sesión con link mágico
+  const signInWithLink = async (email: string, redirectTo?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: redirectTo || `${window.location.origin}/auth/callback`,
+        },
+      })
+      return { data, error }
+    } catch (error) {
+      console.error('Error al enviar el link de inicio de sesión:', error)
+      return { data: null, error: error as Error }
+    }
+  }
+
+  // Función para registrarse
+  const signUp = async (email: string, password: string, redirectTo?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectTo || `${window.location.origin}/auth/verify`,
+        },
+      })
+      return { data, error }
+    } catch (error) {
+      console.error('Error al registrarse:', error)
+      return { data: null, error: error as Error }
+    }
+  }
+
+  // Función para restablecer la contraseña
+  const resetPassword = async (email: string, redirectTo?: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo || `${window.location.origin}/auth/update-password`,
+      })
+      return { data, error }
+    } catch (error) {
+      console.error('Error al solicitar restablecimiento de contraseña:', error)
+      return { data: null, error: error as Error }
+    }
+  }
+
+  // Función para actualizar la contraseña
+  const updatePassword = async (newPassword: string) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+      return { data, error }
+    } catch (error) {
+      console.error('Error al actualizar la contraseña:', error)
       return { data: null, error: error as Error }
     }
   }
@@ -94,6 +169,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         session,
         isLoading,
         signIn,
+        signInWithLink,
+        signUp,
+        resetPassword,
+        updatePassword,
         signOut,
       }}
     >

@@ -3,7 +3,11 @@ import { useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { AlertCircle, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle } from 'lucide-react'
+import { AlertCircle, CheckCircle, ArrowRight, ArrowLeft, AlertTriangle, Copy, Check, Loader2 } from 'lucide-react'
+import { format } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+import { useSurveyProgress } from '@/hooks/useSurveyProgress'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,7 +44,7 @@ const productCodeSchema = z.object({
 type ProductCodeFormValues = z.infer<typeof productCodeSchema>
 
 // Estados de la página
-type PageState = 'loading' | 'not-found' | 'code-required' | 'survey-display'
+type PageState = 'loading' | 'not-found' | 'code-required' | 'survey-display' | 'survey-completed'
 
 // Interfaces para los datos de la encuesta
 interface Question {
@@ -75,24 +79,43 @@ interface Survey {
 // Tipo para las respuestas
 type AnswersMap = Record<string, string | string[]>
 
+// Interfaz para los datos de finalización
+interface CompletionData {
+  discount_code: string
+  valid_until: string
+  discount_percentage: number
+}
+
 /**
  * Página pública para mostrar y responder una encuesta
  */
 export default function SurveyPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug = '' } = useParams<{ slug: string }>()
   const [pageState, setPageState] = useState<PageState>('loading')
   const [survey, setSurvey] = useState<Survey | null>(null)
   const [sections, setSections] = useState<Section[]>([])
-  const [codeId, setCodeId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [validatingCode, setValidatingCode] = useState(false)
-
-  // Estados para la navegación y respuestas
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
-  const [answers, setAnswers] = useState<AnswersMap>({})
-  const [responseId, setResponseId] = useState<string | null>(null)
-  const [completedSections, setCompletedSections] = useState<Set<string>>(new Set())
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [savingAnswer, setSavingAnswer] = useState(false)
+  const [finalizing, setFinalizing] = useState(false)
+  const [completionData, setCompletionData] = useState<CompletionData | null>(null)
+  const [copySuccess, setCopySuccess] = useState(false)
+
+  // Usar el hook personalizado para gestionar el progreso
+  const {
+    currentSectionIndex,
+    answers,
+    responseId,
+    completedSections,
+    productCodeId,
+    setCurrentSectionIndex,
+    updateAnswer,
+    setResponseId,
+    addCompletedSection,
+    setProductCodeId,
+    clearProgress
+  } = useSurveyProgress(slug)
 
   // Configurar el formulario para el código de producto
   const form = useForm<ProductCodeFormValues>({
@@ -195,7 +218,7 @@ export default function SurveyPage() {
 
       if (responseData.success) {
         // Guardar el ID del código validado
-        setCodeId(responseData.codeId)
+        setProductCodeId(responseData.codeId)
 
         // Cargar las secciones y preguntas
         await fetchSectionsAndQuestions(survey.id)
@@ -214,25 +237,149 @@ export default function SurveyPage() {
     }
   }
 
-  // Manejar el cambio de respuesta
-  const handleAnswerChange = (questionId: string, value: string | string[]) => {
-    setAnswers(prev => ({
-      ...prev,
-      [questionId]: value
-    }))
+  // Guardar una respuesta en la base de datos
+  const saveAnswer = async (questionId: string, value: string | string[], question: Question) => {
+    if (!survey) return
+
+    try {
+      setSavingAnswer(true)
+      setError(null)
+
+      // Si no hay responseId, crear primero el registro de respuesta
+      if (!responseId) {
+        const { data, error } = await supabase
+          .from('survey_responses')
+          .insert({
+            survey_id: survey.id,
+            product_code_id: productCodeId,
+            status: 'in_progress',
+            start_time: new Date().toISOString()
+          })
+          .select('id')
+          .single()
+
+        if (error) throw error
+
+        if (data) {
+          setResponseId(data.id)
+        } else {
+          throw new Error('No se pudo crear el registro de respuesta')
+        }
+      }
+
+      // Guardar la respuesta individual
+      const { error } = await supabase
+        .from('answers')
+        .upsert({
+          response_id: responseId,
+          question_id: questionId,
+          answer_value: typeof value === 'string' ? value : JSON.stringify(value),
+          question_text_at_response: question.question_text,
+          question_type_at_response: question.question_type
+        })
+
+      if (error) throw error
+
+    } catch (error: any) {
+      console.error('Error al guardar la respuesta:', error)
+      // No mostrar el error al usuario para no interrumpir la experiencia
+      // Solo registrar en consola
+    } finally {
+      setSavingAnswer(false)
+    }
   }
 
-  // Calcular el progreso de la encuesta
+  // Actualizar el último ID de sección guardado
+  const updateLastSavedSection = async (sectionId: string) => {
+    if (!responseId || !survey) return
+
+    try {
+      const { error } = await supabase
+        .from('survey_responses')
+        .update({ last_saved_section_id: sectionId })
+        .eq('id', responseId)
+
+      if (error) throw error
+    } catch (error) {
+      console.error('Error al actualizar la última sección guardada:', error)
+    }
+  }
+
+  // Finalizar la encuesta
+  const finalizeSurvey = async () => {
+    if (!responseId || !survey) return
+
+    try {
+      setFinalizing(true)
+      setError(null)
+
+      // Llamar a la Edge Function para finalizar la respuesta
+      const { data: responseData, error } = await supabase.functions.invoke('finalize-survey-response', {
+        body: { responseId }
+      })
+
+      if (error) throw error
+
+      if (responseData.success) {
+        // Limpiar el progreso guardado
+        clearProgress()
+
+        // Guardar los datos de finalización
+        setCompletionData(responseData.data)
+
+        // Cambiar al estado de encuesta completada
+        setPageState('survey-completed')
+      } else {
+        throw new Error(responseData.error || 'Error al finalizar la encuesta')
+      }
+    } catch (error: any) {
+      console.error('Error al finalizar la encuesta:', error)
+      setError(`Error al finalizar la encuesta: ${error.message || 'Intenta de nuevo'}`)
+    } finally {
+      setFinalizing(false)
+    }
+  }
+
+  // Copiar el código de descuento al portapapeles
+  const copyDiscountCode = () => {
+    if (!completionData) return
+
+    navigator.clipboard.writeText(completionData.discount_code)
+      .then(() => {
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      })
+      .catch(err => {
+        console.error('Error al copiar el código:', err)
+      })
+  }
+
+  // Manejar el cambio de respuesta
+  const handleAnswerChange = async (questionId: string, value: string | string[], question: Question) => {
+    // Actualizar el estado local
+    updateAnswer(questionId, value)
+
+    // Guardar en la base de datos
+    await saveAnswer(questionId, value, question)
+  }
+
+  /**
+   * Calcula el porcentaje de progreso de la encuesta basado en las secciones completadas
+   *
+   * El progreso se calcula encontrando el porcentaje de descuento acumulativo máximo
+   * entre todas las secciones que el usuario ha completado. Esto permite mostrar
+   * al usuario cuánto descuento ha obtenido hasta el momento.
+   */
   const calculateProgress = () => {
     if (!sections || sections.length === 0) return 0
 
     // Si no hay secciones completadas, devolver 0
-    if (completedSections.size === 0) return 0
+    if (completedSections.length === 0) return 0
 
     // Encontrar el porcentaje de descuento acumulativo máximo entre las secciones completadas
     let maxDiscount = 0
     sections.forEach(section => {
-      if (completedSections.has(section.id)) {
+      if (completedSections.includes(section.id)) {
         maxDiscount = Math.max(maxDiscount, section.discount_percentage_cumulative)
       }
     })
@@ -248,8 +395,14 @@ export default function SurveyPage() {
     }
   }
 
-  // Navegar a la siguiente sección
-  const goToNextSection = () => {
+  /**
+   * Navega a la siguiente sección de la encuesta
+   *
+   * Antes de avanzar, valida que todas las preguntas requeridas tengan respuesta.
+   * Si la validación es exitosa, marca la sección actual como completada,
+   * actualiza la última sección guardada en la base de datos y avanza a la siguiente sección.
+   */
+  const goToNextSection = async () => {
     if (!sections || currentSectionIndex >= sections.length - 1) return
 
     // Validar que todas las preguntas requeridas tengan respuesta
@@ -267,18 +420,27 @@ export default function SurveyPage() {
     }
 
     // Marcar la sección como completada
-    setCompletedSections(prev => {
-      const newSet = new Set(prev)
-      newSet.add(currentSection.id)
-      return newSet
-    })
+    addCompletedSection(currentSection.id)
+
+    // Actualizar la última sección guardada en la base de datos
+    if (responseId) {
+      await updateLastSavedSection(currentSection.id)
+    }
 
     // Avanzar a la siguiente sección
     setCurrentSectionIndex(currentSectionIndex + 1)
     setValidationError(null)
   }
 
-  // Renderizar un input según el tipo de pregunta
+  /**
+   * Renderiza el componente de input adecuado según el tipo de pregunta
+   *
+   * Cada tipo de pregunta (texto, textarea, opción única, opción múltiple, escala)
+   * requiere un componente de input diferente. Esta función determina qué componente
+   * usar y cómo configurarlo basándose en el tipo de pregunta y su configuración.
+   *
+   * @param question - La pregunta para la que se debe renderizar el input
+   */
   const renderQuestionInput = (question: Question) => {
     const value = answers[question.id] || ''
 
@@ -287,7 +449,7 @@ export default function SurveyPage() {
         return (
           <Input
             value={value as string}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
             required={question.is_required}
             placeholder="Tu respuesta"
           />
@@ -297,7 +459,7 @@ export default function SurveyPage() {
         return (
           <Textarea
             value={value as string}
-            onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
             required={question.is_required}
             placeholder="Tu respuesta"
           />
@@ -308,7 +470,7 @@ export default function SurveyPage() {
         return (
           <RadioGroup
             value={value as string}
-            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            onValueChange={(val) => handleAnswerChange(question.id, val, question)}
             className="space-y-2"
           >
             {singleOptions.map((option: string, index: number) => (
@@ -336,11 +498,12 @@ export default function SurveyPage() {
                     checked={isChecked}
                     onCheckedChange={(checked) => {
                       if (checked) {
-                        handleAnswerChange(question.id, [...selectedOptions, option])
+                        handleAnswerChange(question.id, [...selectedOptions, option], question)
                       } else {
                         handleAnswerChange(
                           question.id,
-                          selectedOptions.filter(item => item !== option)
+                          selectedOptions.filter(item => item !== option),
+                          question
                         )
                       }
                     }}
@@ -363,7 +526,7 @@ export default function SurveyPage() {
         return (
           <RadioGroup
             value={value as string}
-            onValueChange={(val) => handleAnswerChange(question.id, val)}
+            onValueChange={(val) => handleAnswerChange(question.id, val, question)}
             className="flex space-x-4"
           >
             {Array.from({ length: maxRating }, (_, i) => i + 1).map((rating) => (
@@ -387,7 +550,7 @@ export default function SurveyPage() {
     switch (pageState) {
       case 'loading':
         return (
-          <Card className="w-full max-w-md mx-auto">
+          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
             <CardHeader>
               <CardTitle className="text-center">Cargando encuesta...</CardTitle>
             </CardHeader>
@@ -399,7 +562,7 @@ export default function SurveyPage() {
 
       case 'not-found':
         return (
-          <Card className="w-full max-w-md mx-auto">
+          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
             <CardHeader>
               <CardTitle className="text-center">Encuesta no encontrada</CardTitle>
             </CardHeader>
@@ -413,7 +576,7 @@ export default function SurveyPage() {
 
       case 'code-required':
         return (
-          <Card className="w-full max-w-md mx-auto">
+          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
             <CardHeader>
               <CardTitle>{survey?.name}</CardTitle>
               <CardDescription>
@@ -466,7 +629,7 @@ export default function SurveyPage() {
         // Si no hay secciones, mostrar mensaje de carga
         if (!sections || sections.length === 0) {
           return (
-            <Card className="w-full max-w-3xl mx-auto">
+            <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
               <CardHeader>
                 <CardTitle>{survey?.name}</CardTitle>
               </CardHeader>
@@ -482,7 +645,7 @@ export default function SurveyPage() {
         const currentSection = sections[currentSectionIndex]
         if (!currentSection) {
           return (
-            <Card className="w-full max-w-3xl mx-auto">
+            <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
               <CardHeader>
                 <CardTitle>{survey?.name}</CardTitle>
               </CardHeader>
@@ -501,7 +664,7 @@ export default function SurveyPage() {
         const progress = calculateProgress()
 
         return (
-          <Card className="w-full max-w-3xl mx-auto">
+          <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
             <CardHeader>
               <CardTitle>{survey?.name}</CardTitle>
               <CardDescription>
@@ -559,21 +722,111 @@ export default function SurveyPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Sección Anterior
               </Button>
-              <Button
-                onClick={goToNextSection}
-                disabled={currentSectionIndex >= sections.length - 1}
-              >
-                Siguiente Sección
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+
+              <div className="flex gap-2">
+                {completedSections.length > 0 && (
+                  <Button
+                    onClick={finalizeSurvey}
+                    disabled={finalizing}
+                    variant="success"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {finalizing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Finalizando...
+                      </>
+                    ) : (
+                      <>Finalizar Encuesta</>
+                    )}
+                  </Button>
+                )}
+
+                <Button
+                  onClick={goToNextSection}
+                  disabled={currentSectionIndex >= sections.length - 1}
+                >
+                  Siguiente Sección
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </CardFooter>
+          </Card>
+        )
+
+      case 'survey-completed':
+        if (!completionData) {
+          return (
+            <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
+              <CardHeader>
+                <CardTitle className="text-center">Error</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-gray-500">
+                  No se encontraron datos de finalización.
+                </p>
+              </CardContent>
+              <CardFooter className="flex justify-center">
+                <Button onClick={() => setPageState('survey-display')}>
+                  Volver a la encuesta
+                </Button>
+              </CardFooter>
+            </Card>
+          )
+        }
+
+        return (
+          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
+            <CardHeader>
+              <CardTitle className="text-center text-green-600">¡Gracias por completar la encuesta!</CardTitle>
+              <CardDescription className="text-center">
+                Tu opinión es muy valiosa para nosotros.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertTitle>Descuento obtenido: {completionData.discount_percentage}%</AlertTitle>
+                <AlertDescription>
+                  Has obtenido un descuento del {completionData.discount_percentage}% para tu próxima compra.
+                </AlertDescription>
+              </Alert>
+
+              <div className="rounded-lg border p-4 bg-gray-50">
+                <div className="text-sm text-gray-500 mb-2">Tu código de descuento:</div>
+                <div className="flex items-center justify-between bg-white rounded border p-3">
+                  <code className="font-mono text-lg font-bold">{completionData.discount_code}</code>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={copyDiscountCode}
+                    className="flex items-center gap-1"
+                  >
+                    {copySuccess ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Copiado</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <div className="text-sm text-gray-500 mt-2">
+                  Válido hasta: {format(new Date(completionData.valid_until), 'dd/MM/yyyy', { locale: es })}
+                </div>
+              </div>
+            </CardContent>
           </Card>
         )
     }
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="container mx-auto py-4 px-4 sm:py-6 md:py-8">
       <div className="max-w-3xl mx-auto">
         {renderContent()}
       </div>

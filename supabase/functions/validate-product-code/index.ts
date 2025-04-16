@@ -185,15 +185,26 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
-    // Capturar cualquier error no manejado
+    /**
+     * Capturar cualquier error no manejado
+     *
+     * Este bloque maneja errores inesperados que pueden ocurrir durante la ejecución
+     * de la función. Registra el error en la consola para depuración y devuelve
+     * una respuesta de error estructurada al cliente.
+     */
     console.error('Error en validate-product-code:', error);
-    
+
+    // Determinar si es un error conocido o genérico
+    const errorMessage = error instanceof Error
+      ? `Error interno: ${error.message}`
+      : 'Error interno del servidor al validar el código.';
+
     return new Response(
       JSON.stringify({
         success: false,
         error: {
           code: 'SERVER_ERROR',
-          message: 'Error interno del servidor al validar el código.'
+          message: errorMessage
         }
       } as ErrorResponse),
       {
