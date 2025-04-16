@@ -32,18 +32,21 @@ import {
 
 // Tipos de preguntas disponibles
 const QUESTION_TYPES = [
-  { value: 'text', label: 'Texto' },
-  { value: 'textarea', label: 'Texto largo' },
-  { value: 'single_choice', label: 'Opción única' },
-  { value: 'multiple_choice', label: 'Opción múltiple' },
-  { value: 'rating', label: 'Valoración' },
-  { value: 'scale', label: 'Escala' },
+  { value: 'text_short', label: 'Texto Corto' },
+  { value: 'text_long', label: 'Texto Largo (Textarea)' },
+  { value: 'radio', label: 'Opción Única (Radio)' },
+  { value: 'checkbox', label: 'Opción Múltiple (Checkbox)' },
+  { value: 'scale', label: 'Escala (Numérica)' },
+  { value: 'dropdown', label: 'Desplegable (Dropdown)' },
+  { value: 'email', label: 'Campo Email' },
+  { value: 'phone', label: 'Campo Teléfono' },
+  { value: 'name', label: 'Campo Nombre' },
 ] as const
 
 // Esquema de validación para una pregunta
 const questionSchema = z.object({
   question_text: z.string().min(1, 'El texto de la pregunta es requerido'),
-  question_type: z.enum(['text', 'textarea', 'single_choice', 'multiple_choice', 'rating', 'scale']),
+  question_type: z.enum(['text_short', 'text_long', 'radio', 'checkbox', 'scale', 'dropdown', 'email', 'phone', 'name']),
   options: z.string().optional(),
   is_required: z.boolean().default(false),
   question_order: z.coerce.number().int('Debe ser un número entero').min(0),
@@ -76,7 +79,7 @@ export default function QuestionForm({
     resolver: zodResolver(questionSchema),
     defaultValues: initialData || {
       question_text: '',
-      question_type: 'text',
+      question_type: 'text_short',
       options: '',
       is_required: true,
       question_order: 0,
@@ -87,9 +90,9 @@ export default function QuestionForm({
   useEffect(() => {
     const questionType = form.watch('question_type')
     setShowOptionsField(
-      questionType === 'single_choice' ||
-      questionType === 'multiple_choice' ||
-      questionType === 'rating' ||
+      questionType === 'radio' ||
+      questionType === 'checkbox' ||
+      questionType === 'dropdown' ||
       questionType === 'scale'
     )
   }, [form.watch('question_type')])
@@ -181,7 +184,7 @@ export default function QuestionForm({
                     <FormControl>
                       <Textarea
                         placeholder={
-                          form.watch('question_type') === 'rating' || form.watch('question_type') === 'scale'
+                          form.watch('question_type') === 'scale'
                             ? 'Formato: {"min": 1, "max": 5, "labels": ["Muy malo", "Malo", "Regular", "Bueno", "Muy bueno"]}'
                             : 'Una opción por línea'
                         }
@@ -190,7 +193,7 @@ export default function QuestionForm({
                       />
                     </FormControl>
                     <p className="text-xs text-gray-500">
-                      {form.watch('question_type') === 'rating' || form.watch('question_type') === 'scale'
+                      {form.watch('question_type') === 'scale'
                         ? 'Ingresa un objeto JSON con min, max y labels opcionales'
                         : 'Ingresa una opción por línea'}
                     </p>
