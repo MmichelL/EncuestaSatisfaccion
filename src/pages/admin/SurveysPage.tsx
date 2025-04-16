@@ -67,7 +67,12 @@ export default function SurveysPage() {
     {
       accessorKey: 'name',
       header: 'Nombre',
-      cell: ({ row }) => <div className="font-medium">{row.getValue('name')}</div>,
+      cell: ({ row }) => <div className="font-medium text-gray-800">{row.getValue('name')}</div>,
+    },
+    {
+      accessorKey: 'slug',
+      header: 'Slug',
+      cell: ({ row }) => <div className="text-sm text-gray-500">{row.getValue('slug')}</div>,
     },
     {
       accessorKey: 'is_active',
@@ -75,13 +80,13 @@ export default function SurveysPage() {
       cell: ({ row }) => {
         const isActive = row.getValue('is_active')
         return isActive ? (
-          <Badge variant="success" className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
+          <Badge variant="success" className="flex items-center gap-1.5 bg-green-100 text-green-700 hover:bg-green-100">
+            <CheckCircle className="h-3.5 w-3.5" />
             <span>Activa</span>
           </Badge>
         ) : (
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <XCircle className="h-3 w-3" />
+          <Badge variant="secondary" className="flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-100">
+            <XCircle className="h-3.5 w-3.5" />
             <span>Inactiva</span>
           </Badge>
         )
@@ -93,13 +98,13 @@ export default function SurveysPage() {
       cell: ({ row }) => {
         const requiresCode = row.getValue('requires_product_code')
         return requiresCode ? (
-          <Badge variant="default" className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
+          <Badge variant="default" className="flex items-center gap-1.5 bg-blue-100 text-blue-700 hover:bg-blue-100">
+            <CheckCircle className="h-3.5 w-3.5" />
             <span>Sí</span>
           </Badge>
         ) : (
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <XCircle className="h-3 w-3" />
+          <Badge variant="secondary" className="flex items-center gap-1.5 bg-gray-100 text-gray-700 hover:bg-gray-100">
+            <XCircle className="h-3.5 w-3.5" />
             <span>No</span>
           </Badge>
         )
@@ -118,15 +123,17 @@ export default function SurveysPage() {
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuLabel>Acciones</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate(`/admin/surveys/${survey.id}/edit`)}>
-                <Edit className="mr-2 h-4 w-4" />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => navigate(`/admin/surveys/${survey.id}/edit`)}>
+                <Edit className="mr-2 h-4 w-4 text-blue-500" />
                 <span>Editar</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="text-red-600"
+                className="cursor-pointer text-red-600"
                 onClick={() => navigate(`/admin/surveys/${survey.id}/edit`)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -140,11 +147,11 @@ export default function SurveysPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col items-start justify-between space-y-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:space-y-0">
         <h1 className="text-2xl font-bold text-gray-900">Encuestas</h1>
-        <Button asChild>
-          <Link to="/admin/surveys/new" className="flex items-center gap-1">
+        <Button asChild className="shadow-sm">
+          <Link to="/admin/surveys/new" className="flex items-center gap-2">
             <Plus className="h-4 w-4" />
             <span>Crear Nueva Encuesta</span>
           </Link>
@@ -152,24 +159,26 @@ export default function SurveysPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-sm">
           {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-          <span className="ml-2">Cargando encuestas...</span>
-        </div>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={surveys}
-          searchColumn="name"
-          searchPlaceholder="Buscar por nombre..."
-        />
-      )}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        {loading ? (
+          <div className="flex h-40 items-center justify-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+            <span className="ml-3 text-gray-600">Cargando encuestas...</span>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={surveys}
+            searchColumn="name"
+            searchPlaceholder="Buscar por nombre..."
+          />
+        )}
+      </div>
     </div>
   )
 }

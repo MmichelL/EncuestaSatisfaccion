@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import {
   BarChart3,
@@ -29,14 +29,14 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen w-full bg-gray-100">
+    <div className="flex h-screen w-full bg-gray-50">
       {/* Barra lateral */}
-      <aside className="fixed inset-y-0 left-0 z-10 w-64 bg-white shadow-md">
-        <div className="flex h-16 items-center justify-center border-b">
-          <h1 className="text-xl font-bold text-gray-800">Encuesta Satisfacción</h1>
+      <aside className="fixed inset-y-0 left-0 z-20 w-64 bg-white shadow-lg">
+        <div className="flex h-16 items-center justify-center border-b border-gray-100">
+          <h1 className="text-xl font-bold text-blue-600">Encuesta Satisfacción</h1>
         </div>
         <nav className="mt-6 px-4">
-          <ul className="space-y-2">
+          <ul className="space-y-1">
             <NavItem to="/admin" icon={<Home size={20} />} label="Dashboard" />
             <NavItem to="/admin/surveys" icon={<ClipboardList size={20} />} label="Encuestas" />
             <NavItem to="/admin/code-batches" icon={<Package size={20} />} label="Lotes de Códigos" />
@@ -53,13 +53,13 @@ export default function AdminLayout() {
             <NavItem to="/admin/settings" icon={<Settings size={20} />} label="Configuración" />
           </ul>
         </nav>
-        <div className="absolute bottom-0 w-full border-t p-4">
+        <div className="absolute bottom-0 w-full border-t border-gray-100 p-4">
           <button
             onClick={handleLogout}
-            className="flex w-full items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100 hover:text-red-600"
+            className="flex w-full items-center rounded-md px-4 py-2.5 text-gray-600 transition-colors hover:bg-red-50 hover:text-red-600"
           >
             <LogOut size={20} className="mr-3" />
-            <span>Cerrar Sesión</span>
+            <span className="font-medium">Cerrar Sesión</span>
           </button>
         </div>
       </aside>
@@ -67,12 +67,12 @@ export default function AdminLayout() {
       {/* Contenido principal */}
       <div className="ml-64 flex flex-1 flex-col">
         {/* Header */}
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-white px-6 shadow-sm">
-          <h2 className="text-lg font-medium text-gray-800">Panel de Administración</h2>
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-800">Panel de Administración</h2>
           <div className="flex items-center space-x-4">
-            <div className="flex items-center gap-2">
-              <User size={18} className="text-gray-500" />
-              <span className="text-sm font-medium text-gray-600">
+            <div className="flex items-center gap-2.5 rounded-full bg-gray-50 px-4 py-1.5">
+              <User size={18} className="text-blue-500" />
+              <span className="text-sm font-medium text-gray-700">
                 {user?.email}
               </span>
             </div>
@@ -80,8 +80,10 @@ export default function AdminLayout() {
         </header>
 
         {/* Área de contenido principal */}
-        <main className="flex-1 overflow-auto p-6">
-          <Outlet />
+        <main className="flex-1 overflow-auto p-8">
+          <div className="mx-auto max-w-7xl">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
@@ -102,16 +104,20 @@ function NavItem({
   label: string
   active?: boolean
 }) {
+  // Usar useLocation para determinar si el enlace está activo
+  const { pathname } = useLocation();
+  const isActive = active || (pathname === to || pathname.startsWith(`${to}/`));
+
   return (
     <li>
       <Link
         to={to}
         className={cn(
-          'flex items-center rounded-md px-4 py-2 text-gray-600 hover:bg-gray-100',
-          active && 'bg-gray-100 font-medium text-gray-900'
+          'flex items-center rounded-md px-4 py-2.5 text-gray-600 transition-colors hover:bg-blue-50 hover:text-blue-600',
+          isActive && 'bg-blue-50 font-medium text-blue-600'
         )}
       >
-        <span className="mr-3">{icon}</span>
+        <span className={cn("mr-3", isActive && "text-blue-600")}>{icon}</span>
         <span>{label}</span>
       </Link>
     </li>

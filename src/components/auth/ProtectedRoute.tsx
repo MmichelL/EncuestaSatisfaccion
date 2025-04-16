@@ -15,8 +15,8 @@ export default function ProtectedRoute() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-          <p className="mt-2 text-gray-600">Cargando...</p>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+          <p className="mt-3 text-gray-600">Cargando...</p>
         </div>
       </div>
     )
@@ -28,6 +28,6 @@ export default function ProtectedRoute() {
     return <Navigate to="/admin/login" state={{ from: location }} replace />
   }
 
-  // Si está autenticado, renderizar las rutas hijas
+  // Si está autenticado, renderizar el Outlet
   return <Outlet />
 }

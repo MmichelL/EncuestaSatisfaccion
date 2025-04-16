@@ -13,6 +13,9 @@ interface CodeBatch {
   id: string
   name: string
   description: string | null
+  prefix: string
+  quantity: number
+  code_length: number
   created_at: string
   total_codes: number
   used_codes: number
@@ -41,7 +44,7 @@ export default function CodeBatchesPage() {
         .select(`
           *,
           total_codes:product_codes(count),
-          used_codes:product_codes(count).filter(status.eq.used)
+          used_codes:product_codes(count).filter(used_at.neq.null)
         `)
         .order('created_at', { ascending: false })
 
@@ -140,6 +143,14 @@ export default function CodeBatchesPage() {
                       <p className="text-sm text-gray-600">{batch.description}</p>
                     )}
                     <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700">Prefijo:</span>{' '}
+                        <span className="font-mono">{batch.prefix}</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700">Longitud:</span>{' '}
+                        <span>{batch.code_length} caracteres</span>
+                      </div>
                       <div>
                         <span className="font-medium text-gray-700">Total:</span>{' '}
                         <span>{batch.total_codes} códigos</span>

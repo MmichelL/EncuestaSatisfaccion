@@ -71,49 +71,50 @@ export const router = createBrowserRouter([
   },
   {
     path: '/admin',
-    element: (
-      <ProtectedRoute>
-        <AdminLayout />
-      </ProtectedRoute>
-    ),
+    element: <ProtectedRoute />,
     children: [
       {
-        index: true,
-        element: <DashboardPage />,
-      },
-      {
-        path: 'surveys',
-        element: <SurveysPage />,
-      },
-      {
-        path: 'surveys/new',
-        element: <CreateSurveyPage />,
-      },
-      {
-        path: 'surveys/:id/edit',
-        element: <EditSurveyPage />,
-      },
-      {
-        path: 'code-batches',
-        element: <CodeBatchesPage />,
-      },
-      {
-        path: 'product-codes',
-        element: <ProductCodesPage />,
-      },
-      {
-        path: 'survey-responses',
-        element: <SurveyResponsesPage />,
-      },
-      {
-        path: 'survey-responses/:id',
-        element: <SurveyResponseDetailPage />,
-      },
-      {
-        path: 'settings',
-        element: <SettingsPage />,
-      },
-    ],
+        element: <AdminLayout />,
+        children: [
+          {
+            index: true,
+            element: <DashboardPage />,
+          },
+          {
+            path: 'surveys',
+            element: <SurveysPage />,
+          },
+          {
+            path: 'surveys/new',
+            element: <CreateSurveyPage />,
+          },
+          {
+            path: 'surveys/:id/edit',
+            element: <EditSurveyPage />,
+          },
+          {
+            path: 'code-batches',
+            element: <CodeBatchesPage />,
+          },
+          {
+            path: 'product-codes',
+            element: <ProductCodesPage />,
+          },
+          {
+            path: 'survey-responses',
+            element: <SurveyResponsesPage />,
+          },
+          {
+            path: 'survey-responses/:id',
+            element: <SurveyResponseDetailPage />,
+          },
+          {
+            path: 'settings',
+            element: <SettingsPage />,
+          },
+        ],
+      }
+    ]
   },
   {
     path: '*',

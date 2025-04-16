@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { 
-  FileText, 
-  Filter, 
-  X, 
-  Download, 
-  ExternalLink, 
-  CheckCircle, 
-  Clock, 
-  AlertTriangle 
+import {
+  FileText,
+  Filter,
+  X,
+  Download,
+  ExternalLink,
+  CheckCircle,
+  Clock,
+  AlertTriangle
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -54,12 +54,12 @@ export default function SurveyResponsesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [exportLoading, setExportLoading] = useState(false)
-  
+
   // Estados para la paginación
   const [totalResponses, setTotalResponses] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  
+
   // Estados para los filtros
   const [surveyFilter, setSurveyFilter] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -97,7 +97,7 @@ export default function SurveyResponsesPage() {
         let query = supabase
           .from('survey_responses')
           .select(`
-            id, 
+            id,
             survey_id,
             surveys(name),
             start_time,
@@ -129,7 +129,7 @@ export default function SurveyResponsesPage() {
         // Aplicar paginación
         const from = (page - 1) * pageSize
         const to = from + pageSize - 1
-        
+
         query = query
           .order('start_time', { ascending: false })
           .range(from, to)
@@ -195,17 +195,17 @@ export default function SurveyResponsesPage() {
 
       // Crear un blob con los datos CSV
       const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' })
-      
+
       // Crear un enlace para descargar el archivo
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.setAttribute('download', `respuestas-encuestas-${format(new Date(), 'yyyy-MM-dd')}.csv`)
       document.body.appendChild(link)
-      
+
       // Simular clic en el enlace para iniciar la descarga
       link.click()
-      
+
       // Limpiar
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
@@ -222,19 +222,19 @@ export default function SurveyResponsesPage() {
     {
       accessorKey: 'id',
       header: 'ID',
-      cell: ({ row }) => <div className="font-mono text-xs">{row.getValue('id')}</div>,
+      cell: ({ row }) => <div className="font-mono text-xs text-gray-500">{row.getValue('id')}</div>,
     },
     {
       accessorKey: 'survey_name',
       header: 'Encuesta',
-      cell: ({ row }) => <div className="font-medium">{row.getValue('survey_name')}</div>,
+      cell: ({ row }) => <div className="font-medium text-gray-800">{row.getValue('survey_name')}</div>,
     },
     {
       accessorKey: 'start_time',
       header: 'Fecha',
       cell: ({ row }) => {
         const date = new Date(row.getValue('start_time'))
-        return <div>{format(date, 'dd/MM/yyyy HH:mm', { locale: es })}</div>
+        return <div className="text-gray-700">{format(date, 'dd/MM/yyyy HH:mm', { locale: es })}</div>
       },
     },
     {
@@ -245,22 +245,22 @@ export default function SurveyResponsesPage() {
         switch (status) {
           case 'completed':
             return (
-              <Badge variant="success" className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3" />
+              <Badge variant="success" className="flex items-center gap-1.5 bg-green-100 text-green-700 hover:bg-green-100">
+                <CheckCircle className="h-3.5 w-3.5" />
                 <span>Completada</span>
               </Badge>
             )
           case 'in_progress':
             return (
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
+              <Badge variant="secondary" className="flex items-center gap-1.5 bg-blue-100 text-blue-700 hover:bg-blue-100">
+                <Clock className="h-3.5 w-3.5" />
                 <span>En progreso</span>
               </Badge>
             )
           case 'abandoned':
             return (
-              <Badge variant="outline" className="flex items-center gap-1 text-amber-600 border-amber-600">
-                <AlertTriangle className="h-3 w-3" />
+              <Badge variant="outline" className="flex items-center gap-1.5 border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100">
+                <AlertTriangle className="h-3.5 w-3.5" />
                 <span>Abandonada</span>
               </Badge>
             )
@@ -274,7 +274,11 @@ export default function SurveyResponsesPage() {
       header: 'Score',
       cell: ({ row }) => {
         const score = row.getValue('discount_percentage_achieved')
-        return score !== null ? `${score}%` : '-'
+        return score !== null ? (
+          <div className="font-medium text-blue-600">{score}%</div>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
       },
     },
     {
@@ -283,7 +287,7 @@ export default function SurveyResponsesPage() {
       cell: ({ row }) => {
         const code = row.getValue('generated_discount_code')
         return code ? (
-          <div className="font-mono text-xs">{code}</div>
+          <div className="rounded-md bg-gray-100 px-2 py-1 font-mono text-xs font-medium text-gray-800">{code}</div>
         ) : (
           <span className="text-gray-400">-</span>
         )
@@ -297,10 +301,10 @@ export default function SurveyResponsesPage() {
         return (
           <Link
             to={`/admin/survey-responses/${id}`}
-            className="flex items-center gap-1 text-blue-600 hover:underline"
+            className="flex items-center gap-1.5 rounded-md px-2 py-1 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-700"
           >
             <FileText className="h-4 w-4" />
-            <span>Ver detalles</span>
+            <span className="font-medium">Ver detalles</span>
             <ExternalLink className="h-3 w-3" />
           </Link>
         )
@@ -309,17 +313,17 @@ export default function SurveyResponsesPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex flex-col items-start justify-between space-y-4 border-b border-gray-200 pb-5 sm:flex-row sm:items-center sm:space-y-0">
         <h1 className="text-2xl font-bold text-gray-900">Respuestas de Encuestas</h1>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
             size="sm"
             onClick={() => setFiltersVisible(!filtersVisible)}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1.5 border-gray-300 shadow-sm"
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-4 w-4 text-gray-500" />
             <span>{filtersVisible ? 'Ocultar filtros' : 'Mostrar filtros'}</span>
           </Button>
           <Button
@@ -327,9 +331,9 @@ export default function SurveyResponsesPage() {
             size="sm"
             onClick={exportToCSV}
             disabled={exportLoading}
-            className="flex items-center gap-1"
+            className="flex items-center gap-1.5 border-gray-300 shadow-sm"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 text-gray-500" />
             <span>{exportLoading ? 'Exportando...' : 'Exportar a CSV'}</span>
           </Button>
           {(surveyFilter || statusFilter || startDateFilter || endDateFilter) && (
@@ -337,7 +341,7 @@ export default function SurveyResponsesPage() {
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="flex items-center gap-1 text-red-500 hover:text-red-600"
+              className="flex items-center gap-1.5 text-red-500 hover:bg-red-50 hover:text-red-600"
             >
               <X className="h-4 w-4" />
               <span>Limpiar filtros</span>
@@ -348,12 +352,16 @@ export default function SurveyResponsesPage() {
 
       {/* Filtros */}
       {filtersVisible && (
-        <div className="rounded-lg border bg-white p-4 shadow-sm">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center">
+            <Filter className="mr-2 h-5 w-5 text-blue-500" />
+            <h2 className="text-lg font-medium text-gray-800">Filtros de búsqueda</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Encuesta</label>
+              <label className="text-sm font-medium text-gray-700">Encuesta</label>
               <Select value={surveyFilter} onValueChange={setSurveyFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300 shadow-sm">
                   <SelectValue placeholder="Todas las encuestas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -367,9 +375,9 @@ export default function SurveyResponsesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Estado</label>
+              <label className="text-sm font-medium text-gray-700">Estado</label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300 shadow-sm">
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
@@ -381,19 +389,21 @@ export default function SurveyResponsesPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha inicio</label>
+              <label className="text-sm font-medium text-gray-700">Fecha inicio</label>
               <DatePicker
                 date={startDateFilter}
                 setDate={setStartDateFilter}
                 placeholder="Fecha desde"
+                className="border-gray-300 shadow-sm"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Fecha fin</label>
+              <label className="text-sm font-medium text-gray-700">Fecha fin</label>
               <DatePicker
                 date={endDateFilter}
                 setDate={setEndDateFilter}
                 placeholder="Fecha hasta"
+                className="border-gray-300 shadow-sm"
               />
             </div>
           </div>
@@ -401,27 +411,27 @@ export default function SurveyResponsesPage() {
       )}
 
       {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-sm">
           {error}
         </div>
       )}
 
       {/* Tabla de respuestas */}
-      <div className="rounded-lg border bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         {loading ? (
-          <div className="flex h-40 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-            <span className="ml-2">Cargando respuestas...</span>
+          <div className="flex h-60 items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+            <span className="ml-3 text-gray-600">Cargando respuestas...</span>
           </div>
         ) : responses.length === 0 ? (
-          <div className="flex h-40 flex-col items-center justify-center">
-            <FileText className="h-10 w-10 text-gray-400" />
-            <p className="mt-2 text-gray-500">No se encontraron respuestas de encuestas.</p>
+          <div className="flex h-60 flex-col items-center justify-center p-8">
+            <FileText className="h-16 w-16 text-gray-300" />
+            <p className="mt-4 text-center text-gray-600">No se encontraron respuestas de encuestas.</p>
             {(surveyFilter || statusFilter || startDateFilter || endDateFilter) && (
               <Button
                 variant="link"
                 onClick={clearFilters}
-                className="mt-2 text-blue-600"
+                className="mt-4 font-medium text-blue-600 hover:text-blue-700"
               >
                 Limpiar filtros
               </Button>
@@ -429,22 +439,25 @@ export default function SurveyResponsesPage() {
           </div>
         ) : (
           <div>
-            <DataTable
-              columns={columns}
-              data={responses}
-            />
-            
+            <div className="p-1">
+              <DataTable
+                columns={columns}
+                data={responses}
+              />
+            </div>
+
             {/* Paginación */}
-            <div className="flex items-center justify-between border-t p-4">
-              <div className="text-sm text-gray-500">
+            <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-4">
+              <div className="text-sm font-medium text-gray-600">
                 Mostrando {(page - 1) * pageSize + 1} a {Math.min(page * pageSize, totalResponses)} de {totalResponses} respuestas
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setPage(page - 1)}
                   disabled={page === 1}
+                  className="border-gray-300 bg-white shadow-sm hover:bg-gray-50"
                 >
                   Anterior
                 </Button>
@@ -453,6 +466,7 @@ export default function SurveyResponsesPage() {
                   size="sm"
                   onClick={() => setPage(page + 1)}
                   disabled={page * pageSize >= totalResponses}
+                  className="border-gray-300 bg-white shadow-sm hover:bg-gray-50"
                 >
                   Siguiente
                 </Button>
@@ -460,6 +474,16 @@ export default function SurveyResponsesPage() {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+        <div className="flex items-center justify-center space-x-4">
+          <FileText size={48} className="text-blue-500" />
+          <p className="text-lg text-gray-600">
+            Visualiza y analiza las respuestas de las encuestas. Filtra por encuesta, fecha o
+            producto y exporta los resultados para análisis detallado.
+          </p>
+        </div>
       </div>
     </div>
   )

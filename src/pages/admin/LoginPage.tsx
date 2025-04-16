@@ -70,51 +70,64 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4 py-12 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-center text-2xl">Iniciar Sesión</CardTitle>
-          <p className="text-center text-sm text-gray-500">
-            Accede al panel de administración
-          </p>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-500">
-              {error}
-            </div>
-          )}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                {...register('email')}
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500">{errors.email.message}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                {...register('password')}
-              />
-              {errors.password && (
-                <p className="text-xs text-red-500">{errors.password.message}</p>
-              )}
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-blue-600">Encuesta Satisfacción</h1>
+          <p className="mt-2 text-gray-600">Panel de Administración</p>
+        </div>
+
+        <Card className="border-none shadow-lg">
+          <CardHeader className="space-y-1 pb-2">
+            <CardTitle className="text-center text-2xl font-bold text-gray-800">Iniciar Sesión</CardTitle>
+            <p className="text-center text-sm text-gray-500">
+              Ingresa tus credenciales para acceder
+            </p>
+          </CardHeader>
+          <CardContent className="pt-4">
+            {error && (
+              <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-sm">
+                {error}
+              </div>
+            )}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-700">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  className="h-11 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-xs font-medium text-red-500">{errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="h-11 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  {...register('password')}
+                />
+                {errors.password && (
+                  <p className="mt-1 text-xs font-medium text-red-500">{errors.password.message}</p>
+                )}
+              </div>
+              <Button
+                type="submit"
+                className="mt-2 h-11 w-full bg-blue-600 font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-blue-500"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

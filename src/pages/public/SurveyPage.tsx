@@ -452,6 +452,7 @@ export default function SurveyPage() {
             onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
             required={question.is_required}
             placeholder="Tu respuesta"
+            className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         )
 
@@ -462,6 +463,7 @@ export default function SurveyPage() {
             onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
             required={question.is_required}
             placeholder="Tu respuesta"
+            className="min-h-[100px] border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         )
 
@@ -471,12 +473,12 @@ export default function SurveyPage() {
           <RadioGroup
             value={value as string}
             onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-            className="space-y-2"
+            className="space-y-3"
           >
             {singleOptions.map((option: string, index: number) => (
-              <div key={index} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`${question.id}-${index}`} />
-                <label htmlFor={`${question.id}-${index}`} className="text-sm font-medium">
+              <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
+                <RadioGroupItem value={option} id={`${question.id}-${index}`} className="h-5 w-5 border-gray-300 text-blue-600" />
+                <label htmlFor={`${question.id}-${index}`} className="w-full cursor-pointer text-gray-700">
                   {option}
                 </label>
               </div>
@@ -488,14 +490,18 @@ export default function SurveyPage() {
         const multipleOptions = question.options ? JSON.parse(question.options) : []
         const selectedOptions = Array.isArray(value) ? value : []
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {multipleOptions.map((option: string, index: number) => {
               const isChecked = selectedOptions.includes(option)
               return (
-                <div key={index} className="flex items-center space-x-2">
+                <div
+                  key={index}
+                  className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                >
                   <Checkbox
                     id={`${question.id}-${index}`}
                     checked={isChecked}
+                    className="h-5 w-5 border-gray-300 text-blue-600"
                     onCheckedChange={(checked) => {
                       if (checked) {
                         handleAnswerChange(question.id, [...selectedOptions, option], question)
@@ -510,7 +516,7 @@ export default function SurveyPage() {
                   />
                   <label
                     htmlFor={`${question.id}-${index}`}
-                    className="text-sm font-medium"
+                    className="w-full cursor-pointer text-gray-700"
                   >
                     {option}
                   </label>
@@ -524,24 +530,40 @@ export default function SurveyPage() {
       case 'scale':
         const maxRating = 5
         return (
-          <RadioGroup
-            value={value as string}
-            onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-            className="flex space-x-4"
-          >
-            {Array.from({ length: maxRating }, (_, i) => i + 1).map((rating) => (
-              <div key={rating} className="flex flex-col items-center">
-                <RadioGroupItem value={rating.toString()} id={`${question.id}-${rating}`} />
-                <label htmlFor={`${question.id}-${rating}`} className="mt-1 text-sm">
-                  {rating}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
+          <div className="py-2">
+            <RadioGroup
+              value={value as string}
+              onValueChange={(val) => handleAnswerChange(question.id, val, question)}
+              className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            >
+              {Array.from({ length: maxRating }, (_, i) => i + 1).map((rating) => (
+                <div key={rating} className="flex flex-col items-center">
+                  <RadioGroupItem
+                    value={rating.toString()}
+                    id={`${question.id}-${rating}`}
+                    className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <label
+                    htmlFor={`${question.id}-${rating}`}
+                    className="mt-2 cursor-pointer text-sm font-medium text-gray-700"
+                  >
+                    {rating}
+                  </label>
+                </div>
+              ))}
+            </RadioGroup>
+            <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
+              <span>Muy bajo</span>
+              <span>Muy alto</span>
+            </div>
+          </div>
         )
 
       default:
-        return <Input placeholder="Tu respuesta" />
+        return <Input
+          placeholder="Tu respuesta"
+          className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
     }
   }
 
@@ -550,74 +572,90 @@ export default function SurveyPage() {
     switch (pageState) {
       case 'loading':
         return (
-          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Cargando encuesta...</CardTitle>
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center text-xl text-gray-800">Cargando encuesta...</CardTitle>
             </CardHeader>
-            <CardContent className="flex justify-center py-6">
-              <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
+            <CardContent className="flex justify-center py-8">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
             </CardContent>
           </Card>
         )
 
       case 'not-found':
         return (
-          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center">Encuesta no encontrada</CardTitle>
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-center text-xl text-gray-800">Encuesta no encontrada</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-center text-gray-500">
-                La encuesta que estás buscando no existe o no está activa.
-              </p>
+            <CardContent className="px-8 py-6">
+              <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <AlertCircle className="h-16 w-16 text-amber-500" />
+                <p className="text-gray-600">
+                  La encuesta que estás buscando no existe o no está activa.
+                </p>
+              </div>
             </CardContent>
           </Card>
         )
 
       case 'code-required':
         return (
-          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle>{survey?.name}</CardTitle>
-              <CardDescription>
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+            <CardHeader className="space-y-2 pb-4">
+              <CardTitle className="text-center text-xl text-gray-800">{survey?.name}</CardTitle>
+              <CardDescription className="text-center">
                 Para acceder a esta encuesta, por favor ingresa el código de producto.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-6 pb-8 pt-2">
               {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
+                <Alert variant="destructive" className="mb-6 border border-red-200 bg-red-50 text-red-800">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertTitle className="font-medium">Error</AlertTitle>
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(validateProductCode)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(validateProductCode)} className="space-y-6">
                   <FormField
                     control={form.control}
                     name="codeValue"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Código de Producto</FormLabel>
+                      <FormItem className="space-y-3">
+                        <FormLabel className="text-gray-700">Código de Producto</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Ingresa el código de producto" />
+                          <Input
+                            {...field}
+                            placeholder="Ingresa el código de producto"
+                            className="h-11 border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                          />
                         </FormControl>
-                        <FormDescription>
+                        <FormDescription className="text-sm text-gray-500">
                           El código se encuentra en el producto o en el recibo de compra.
                         </FormDescription>
-                        <FormMessage />
+                        <FormMessage className="font-medium text-red-500" />
                       </FormItem>
                     )}
                   />
 
                   <Button
                     type="submit"
-                    className="w-full"
+                    className="mt-2 h-11 w-full bg-blue-600 font-medium shadow-sm hover:bg-blue-700 focus:ring-blue-500"
                     disabled={validatingCode}
                   >
-                    {validatingCode ? 'Validando...' : 'Continuar'}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {validatingCode ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Validando...
+                      </>
+                    ) : (
+                      <>
+                        Continuar
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
                 </form>
               </Form>
@@ -629,13 +667,13 @@ export default function SurveyPage() {
         // Si no hay secciones, mostrar mensaje de carga
         if (!sections || sections.length === 0) {
           return (
-            <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
-              <CardHeader>
-                <CardTitle>{survey?.name}</CardTitle>
+            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
+              <CardHeader className="border-b border-gray-100 pb-4">
+                <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
               </CardHeader>
-              <CardContent className="flex justify-center py-6">
-                <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-600"></div>
-                <span className="ml-2">Cargando secciones y preguntas...</span>
+              <CardContent className="flex items-center justify-center space-x-3 py-12">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"></div>
+                <span className="text-gray-600">Cargando secciones y preguntas...</span>
               </CardContent>
             </Card>
           )
@@ -645,14 +683,14 @@ export default function SurveyPage() {
         const currentSection = sections[currentSectionIndex]
         if (!currentSection) {
           return (
-            <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
-              <CardHeader>
-                <CardTitle>{survey?.name}</CardTitle>
+            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
+              <CardHeader className="border-b border-gray-100 pb-4">
+                <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
+              <CardContent className="p-6">
+                <Alert variant="destructive" className="border border-red-200 bg-red-50 text-red-800">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <AlertTitle className="font-medium">Error</AlertTitle>
                   <AlertDescription>No se encontró la sección actual.</AlertDescription>
                 </Alert>
               </CardContent>
@@ -664,72 +702,76 @@ export default function SurveyPage() {
         const progress = calculateProgress()
 
         return (
-          <Card className="w-full max-w-[95%] sm:max-w-2xl md:max-w-3xl mx-auto">
-            <CardHeader>
-              <CardTitle>{survey?.name}</CardTitle>
-              <CardDescription>
-                {survey?.description}
-              </CardDescription>
+          <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
+            <CardHeader className="border-b border-gray-100 pb-4">
+              <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
+              {survey?.description && (
+                <CardDescription className="mt-1 text-gray-600">
+                  {survey.description}
+                </CardDescription>
+              )}
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 p-6">
               {/* Barra de progreso */}
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Progreso</span>
-                  <span>{progress}%</span>
+                <div className="flex justify-between text-sm font-medium">
+                  <span className="text-gray-700">Progreso</span>
+                  <span className="text-blue-600">{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-2" />
+                <Progress value={progress} className="h-3 bg-gray-100" />
               </div>
 
               {/* Título y descripción de la sección */}
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">{currentSection.title}</h2>
+              <div className="space-y-2 rounded-lg bg-blue-50 p-4">
+                <h2 className="text-lg font-semibold text-gray-800">{currentSection.title}</h2>
                 {currentSection.description && (
-                  <p className="text-gray-500">{currentSection.description}</p>
+                  <p className="text-gray-600">{currentSection.description}</p>
                 )}
               </div>
 
               {/* Mensaje de validación */}
               {validationError && (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>Error de validación</AlertTitle>
+                <Alert variant="destructive" className="border border-red-200 bg-red-50 text-red-800">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <AlertTitle className="font-medium">Error de validación</AlertTitle>
                   <AlertDescription>{validationError}</AlertDescription>
                 </Alert>
               )}
 
               {/* Preguntas */}
-              <div className="space-y-6">
-                {currentSection.questions.map((question) => (
-                  <div key={question.id} className="space-y-2">
+              <div className="space-y-8">
+                {currentSection.questions.map((question, index) => (
+                  <div key={question.id} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-1">
-                      <label className="font-medium">
-                        {question.question_text}
-                        {question.is_required && <span className="text-red-500 ml-1">*</span>}
+                      <label className="font-medium text-gray-800">
+                        {index + 1}. {question.question_text}
+                        {question.is_required && <span className="ml-1 text-red-500">*</span>}
                       </label>
                     </div>
-                    {renderQuestionInput(question)}
+                    <div className="pl-5">
+                      {renderQuestionInput(question)}
+                    </div>
                   </div>
                 ))}
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
+            <CardFooter className="flex justify-between border-t border-gray-100 bg-gray-50 px-6 py-4">
               <Button
                 variant="outline"
                 onClick={goToPreviousSection}
                 disabled={currentSectionIndex === 0}
+                className="border-gray-300 bg-white shadow-sm hover:bg-gray-50"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Sección Anterior
               </Button>
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 {completedSections.length > 0 && (
                   <Button
                     onClick={finalizeSurvey}
                     disabled={finalizing}
-                    variant="success"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 font-medium text-white shadow-sm hover:bg-green-700"
                   >
                     {finalizing ? (
                       <>
@@ -745,6 +787,7 @@ export default function SurveyPage() {
                 <Button
                   onClick={goToNextSection}
                   disabled={currentSectionIndex >= sections.length - 1}
+                  className="bg-blue-600 font-medium text-white shadow-sm hover:bg-blue-700"
                 >
                   Siguiente Sección
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -757,17 +800,23 @@ export default function SurveyPage() {
       case 'survey-completed':
         if (!completionData) {
           return (
-            <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="text-center">Error</CardTitle>
+            <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-center text-xl text-gray-800">Error</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-center text-gray-500">
-                  No se encontraron datos de finalización.
-                </p>
+              <CardContent className="px-6 py-4">
+                <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                  <AlertCircle className="h-16 w-16 text-amber-500" />
+                  <p className="text-gray-600">
+                    No se encontraron datos de finalización.
+                  </p>
+                </div>
               </CardContent>
-              <CardFooter className="flex justify-center">
-                <Button onClick={() => setPageState('survey-display')}>
+              <CardFooter className="flex justify-center border-t border-gray-100 bg-gray-50 p-4">
+                <Button
+                  onClick={() => setPageState('survey-display')}
+                  className="bg-blue-600 font-medium shadow-sm hover:bg-blue-700"
+                >
                   Volver a la encuesta
                 </Button>
               </CardFooter>
@@ -776,31 +825,38 @@ export default function SurveyPage() {
         }
 
         return (
-          <Card className="w-full max-w-[95%] sm:max-w-md mx-auto">
-            <CardHeader>
-              <CardTitle className="text-center text-green-600">¡Gracias por completar la encuesta!</CardTitle>
-              <CardDescription className="text-center">
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 pb-6 pt-8">
+              <div className="mb-4 flex justify-center">
+                <div className="rounded-full bg-white p-3 shadow-md">
+                  <CheckCircle className="h-12 w-12 text-green-600" />
+                </div>
+              </div>
+              <CardTitle className="text-center text-2xl font-bold text-green-700">¡Gracias por completar la encuesta!</CardTitle>
+              <CardDescription className="text-center text-green-600">
                 Tu opinión es muy valiosa para nosotros.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertTitle>Descuento obtenido: {completionData.discount_percentage}%</AlertTitle>
+            <CardContent className="space-y-6 p-6">
+              <Alert variant="success" className="border-green-200 bg-green-50 text-green-800">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <AlertTitle className="font-semibold">Descuento obtenido: {completionData.discount_percentage}%</AlertTitle>
                 <AlertDescription>
                   Has obtenido un descuento del {completionData.discount_percentage}% para tu próxima compra.
                 </AlertDescription>
               </Alert>
 
-              <div className="rounded-lg border p-4 bg-gray-50">
-                <div className="text-sm text-gray-500 mb-2">Tu código de descuento:</div>
-                <div className="flex items-center justify-between bg-white rounded border p-3">
-                  <code className="font-mono text-lg font-bold">{completionData.discount_code}</code>
+              <div className="overflow-hidden rounded-lg border border-gray-200 shadow-sm">
+                <div className="border-b border-gray-200 bg-gray-50 p-3">
+                  <div className="text-sm font-medium text-gray-700">Tu código de descuento:</div>
+                </div>
+                <div className="flex items-center justify-between bg-white p-4">
+                  <code className="font-mono text-xl font-bold text-blue-700">{completionData.discount_code}</code>
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant={copySuccess ? "success" : "outline"}
                     onClick={copyDiscountCode}
-                    className="flex items-center gap-1"
+                    className={`flex items-center gap-1.5 ${copySuccess ? 'bg-green-100 text-green-700 hover:bg-green-100' : 'border-gray-300'}`}
                   >
                     {copySuccess ? (
                       <>
@@ -815,8 +871,10 @@ export default function SurveyPage() {
                     )}
                   </Button>
                 </div>
-                <div className="text-sm text-gray-500 mt-2">
-                  Válido hasta: {format(new Date(completionData.valid_until), 'dd/MM/yyyy', { locale: es })}
+                <div className="border-t border-gray-200 bg-gray-50 p-3">
+                  <div className="text-sm text-gray-600">
+                    Válido hasta: {format(new Date(completionData.valid_until), 'dd/MM/yyyy', { locale: es })}
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -826,8 +884,8 @@ export default function SurveyPage() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-4 sm:py-6 md:py-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4 sm:py-12 md:py-16">
+      <div className="mx-auto max-w-3xl">
         {renderContent()}
       </div>
     </div>
