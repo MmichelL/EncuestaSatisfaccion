@@ -50,8 +50,9 @@ export default function CodeBatchesPage() {
       // Transformar los datos para obtener los conteos correctos
       const formattedData = data.map((batch: any) => ({
         ...batch,
-        total_codes: batch.total_codes,
-        used_codes: batch.used_codes
+        // Extraer el count, con valor por defecto 0
+        total_codes: batch.total_codes?.[0]?.count ?? 0,
+        used_codes: batch.used_codes?.[0]?.count ?? 0
       }))
 
       setCodeBatches(formattedData)
