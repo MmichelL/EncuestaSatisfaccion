@@ -1,54 +1,29 @@
-# React + TypeScript + Vite
+# Sistema de Encuestas de Satisfacción
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Plataforma web integral para la gestión de encuestas de satisfacción con incentivos de descuento para los clientes.
 
-Currently, two official plugins are available:
+## Características Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Diseño y gestión de encuestas con múltiples secciones y tipos de preguntas
+- Sistema de descuentos incrementales basados en el progreso del cliente
+- Validación opcional mediante códigos de producto únicos
+- Importación y exportación de encuestas mediante archivos JSON
+- Plantillas de ejemplo con documentación integrada
+- Panel de administración completo para gestionar encuestas, códigos y respuestas
+- Exportación de respuestas a formato CSV
 
-## Expanding the ESLint configuration
+## Tecnologías Utilizadas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- React + TypeScript + Vite
+- Supabase (PostgreSQL, Auth, Storage, Edge Functions)
+- Tailwind CSS + Shadcn UI
+- React Router DOM
+- React Hook Form + Zod
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Documentación
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Para más información sobre el proyecto, consulta los siguientes archivos:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+- [CONTEXTO_ALCANCE.md](./CONTEXTO_ALCANCE.md) - Contexto, visión y alcance del proyecto
+- [INSTRUCCIONES_DESARROLLO.md](./INSTRUCCIONES_DESARROLLO.md) - Instrucciones detalladas para desarrolladores
+- [REGLAS_PROYECTO.md](./REGLAS_PROYECTO.md) - Reglas y estándares del proyecto

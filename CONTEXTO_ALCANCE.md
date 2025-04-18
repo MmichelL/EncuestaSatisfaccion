@@ -50,6 +50,8 @@ El objetivo de esta primera versión (MVP) es entregar un sistema funcional que 
     *   Gestión CRUD (Crear, Leer, Actualizar, Eliminar) de Encuestas (nombre, descripción, activación, requerir código, plantilla de descuento, validez).
     *   Editor visual para añadir, eliminar y reordenar Secciones dentro de una encuesta (título, descripción, porcentaje acumulado).
     *   Editor visual para añadir, eliminar y reordenar Preguntas dentro de una sección (texto, tipo, opciones, obligatoria).
+    *   Funcionalidad para importar una encuesta completa (detalles, secciones, preguntas) desde un archivo JSON validado.
+    *   Opción para descargar una plantilla JSON de ejemplo con documentación integrada para facilitar la creación de encuestas.
     *   Gestión CRUD de Lotes de Códigos (nombre, descripción).
     *   Funcionalidad para generar códigos de producto únicos globalmente y asignarlos a un lote específico (cantidad, prefijo, longitud).
     *   Interfaz para vincular/desvincular Lotes de Códigos a Encuestas que requieren código.

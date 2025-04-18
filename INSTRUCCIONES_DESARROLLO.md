@@ -81,7 +81,45 @@ Este documento proporciona instrucciones detalladas y pasos específicos para lo
     *   Al navegar o modificar respuestas, actualiza `localStorage` y realiza `UPSERT` en la tabla `answers` vía `supabase-js`.
 10. **Manejo de Errores:** Muestra mensajes de error claros al usuario si fallan las llamadas a Supabase.
 
-## 6. Tareas Específicas (Ejemplos Detallados)
+## 6. Importación y Exportación de Encuestas
+
+### 6.1. Importación de Encuestas desde JSON
+
+*   **Esquema de Validación Frontend:**
+    *   Implementa un esquema Zod detallado (`surveyImportSchema`) en `src/lib/surveyImportSchema.ts` que valide rigurosamente la estructura del JSON.
+    *   El esquema debe validar la estructura completa: objeto raíz con propiedades `survey` y `sections`, cada una con sus campos requeridos.
+    *   Para `survey`, valida campos como `name`, `slug`, `description`, `is_active`, `requires_product_code`, etc.
+    *   Para cada objeto en `sections`, valida `title`, `description`, `section_order`, `discount_percentage_cumulative` y un array `questions`.
+    *   Para cada objeto en `questions`, valida `question_text`, `question_type`, `options` (cuando aplique), `is_required` y `question_order`.
+    *   Usa `z.enum()` para validar que `question_type` contenga exactamente los valores permitidos en la base de datos.
+
+*   **Función de Base de Datos:**
+    *   Implementa una función PostgreSQL `public.import_survey_from_json(survey_data JSONB)` que procese el JSON validado.
+    *   La función debe ejecutarse como una transacción atómica para garantizar la integridad de los datos.
+    *   Extrae los datos del JSON y realiza inserciones en las tablas `surveys`, `survey_sections` y `questions`.
+    *   Maneja errores adecuadamente y devuelve un objeto JSON con el resultado (`{success: true, surveyId: ID}` o `{success: false, error: {...}}`).
+
+*   **Interfaz de Usuario:**
+    *   Implementa un botón "Importar desde JSON" en la página de gestión de encuestas.
+    *   Usa un input de archivo oculto para seleccionar el archivo JSON.
+    *   Valida el archivo con el esquema Zod antes de enviarlo al servidor.
+    *   Muestra mensajes de error detallados si la validación falla.
+    *   Llama al RPC `import_survey_from_json` solo si la validación es exitosa.
+    *   Muestra feedback adecuado al usuario (mensajes de éxito/error) y refresca la lista de encuestas tras una importación exitosa.
+
+### 6.2. Descarga de Plantilla JSON
+
+*   **Plantilla de Ejemplo:**
+    *   Define una constante `jsonTemplate` que contenga un ejemplo completo y válido de una encuesta en formato JSON.
+    *   Incluye comentarios detallados que expliquen la estructura, campos requeridos, tipos de pregunta permitidos, formato de opciones, etc.
+    *   La plantilla debe servir como documentación y punto de partida para que los usuarios creen sus propias encuestas.
+
+*   **Interfaz de Usuario:**
+    *   Implementa un botón "Descargar Plantilla JSON" junto al botón de importación.
+    *   Al hacer clic, genera y descarga un archivo JSON con la plantilla de ejemplo y documentación.
+    *   Usa la API del navegador (`Blob`, `URL.createObjectURL()`, elemento `<a>`) para crear y descargar el archivo.
+
+## 7. Tareas Específicas (Ejemplos Detallados)
 
 *   **Generar Códigos (`generate-product-codes` EF):**
     *   Recibe `batch_id`, `quantity`, etc.
@@ -103,7 +141,7 @@ Este documento proporciona instrucciones detalladas y pasos específicos para lo
     *   Usar una librería (ej: `papaparse` si se usa Node.js compatible, o lógica manual/librería Deno) para convertir el JSON a formato CSV.
     *   Devolver la respuesta con `Content-Type: text/csv`.
 
-## 7. Consideraciones Finales
+## 8. Consideraciones Finales
 
 *   **Seguridad:** Revisa constantemente las políticas RLS y la lógica de las Edge Functions para evitar vulnerabilidades. Asegúrate de que las claves secretas estén seguras.
 *   **Rendimiento:** Monitoriza el rendimiento de las consultas y funciones. Añade índices a la base de datos donde sea necesario.
