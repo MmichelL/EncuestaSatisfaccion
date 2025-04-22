@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -51,7 +52,7 @@ interface Question {
   id: string
   section_id: string
   question_text: string
-  question_type: 'text' | 'textarea' | 'single_choice' | 'multiple_choice' | 'rating' | 'scale'
+  question_type: 'text_short' | 'text_long' | 'radio' | 'checkbox' | 'scale' | 'dropdown' | 'email' | 'phone' | 'name'
   options: string | null
   is_required: boolean
   question_order: number
@@ -435,7 +436,7 @@ export default function SurveyPage() {
   /**
    * Renderiza el componente de input adecuado según el tipo de pregunta
    *
-   * Cada tipo de pregunta (texto, textarea, opción única, opción múltiple, escala)
+   * Cada tipo de pregunta (texto corto, texto largo, opción única, opción múltiple, escala, etc.)
    * requiere un componente de input diferente. Esta función determina qué componente
    * usar y cómo configurarlo basándose en el tipo de pregunta y su configuración.
    *
@@ -445,7 +446,9 @@ export default function SurveyPage() {
     const value = answers[question.id] || ''
 
     switch (question.question_type) {
-      case 'text':
+      // Campos de texto corto, email, teléfono y nombre
+      case 'text_short':
+      case 'name':
         return (
           <Input
             value={value as string}
@@ -456,7 +459,32 @@ export default function SurveyPage() {
           />
         )
 
-      case 'textarea':
+      case 'email':
+        return (
+          <Input
+            type="email"
+            value={value as string}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
+            required={question.is_required}
+            placeholder="correo@ejemplo.com"
+            className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        )
+
+      case 'phone':
+        return (
+          <Input
+            type="tel"
+            value={value as string}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
+            required={question.is_required}
+            placeholder="Tu número de teléfono"
+            className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        )
+
+      // Campo de texto largo
+      case 'text_long':
         return (
           <Textarea
             value={value as string}
@@ -467,103 +495,252 @@ export default function SurveyPage() {
           />
         )
 
-      case 'single_choice':
-        const singleOptions = question.options ? JSON.parse(question.options) : []
-        return (
-          <RadioGroup
-            value={value as string}
-            onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-            className="space-y-3"
-          >
-            {singleOptions.map((option: string, index: number) => (
-              <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
-                <RadioGroupItem value={option} id={`${question.id}-${index}`} className="h-5 w-5 border-gray-300 text-blue-600" />
-                <label htmlFor={`${question.id}-${index}`} className="w-full cursor-pointer text-gray-700">
-                  {option}
-                </label>
-              </div>
-            ))}
-          </RadioGroup>
-        )
+      // Opción única (Radio)
+      case 'radio':
+        try {
+          const options = question.options ? JSON.parse(question.options) : []
+          if (!Array.isArray(options) || options.length === 0) {
+            return (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error en la configuración</AlertTitle>
+                <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
+              </Alert>
+            )
+          }
 
-      case 'multiple_choice':
-        const multipleOptions = question.options ? JSON.parse(question.options) : []
-        const selectedOptions = Array.isArray(value) ? value : []
-        return (
-          <div className="space-y-3">
-            {multipleOptions.map((option: string, index: number) => {
-              const isChecked = selectedOptions.includes(option)
-              return (
-                <div
-                  key={index}
-                  className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                >
-                  <Checkbox
-                    id={`${question.id}-${index}`}
-                    checked={isChecked}
-                    className="h-5 w-5 border-gray-300 text-blue-600"
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        handleAnswerChange(question.id, [...selectedOptions, option], question)
-                      } else {
-                        handleAnswerChange(
-                          question.id,
-                          selectedOptions.filter(item => item !== option),
-                          question
-                        )
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor={`${question.id}-${index}`}
-                    className="w-full cursor-pointer text-gray-700"
-                  >
-                    {option}
-                  </label>
-                </div>
-              )
-            })}
-          </div>
-        )
-
-      case 'rating':
-      case 'scale':
-        const maxRating = 5
-        return (
-          <div className="py-2">
+          return (
             <RadioGroup
               value={value as string}
               onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-              className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              className="space-y-3"
             >
-              {Array.from({ length: maxRating }, (_, i) => i + 1).map((rating) => (
-                <div key={rating} className="flex flex-col items-center">
-                  <RadioGroupItem
-                    value={rating.toString()}
-                    id={`${question.id}-${rating}`}
-                    className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <label
-                    htmlFor={`${question.id}-${rating}`}
-                    className="mt-2 cursor-pointer text-sm font-medium text-gray-700"
-                  >
-                    {rating}
-                  </label>
+              {options.map((option: {value: string, label: string}, index: number) => (
+                <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
+                  <RadioGroupItem value={option.value} id={`${question.id}-${option.value}`} className="h-5 w-5 border-gray-300 text-blue-600" />
+                  <Label htmlFor={`${question.id}-${option.value}`} className="w-full cursor-pointer text-gray-700">
+                    {option.label}
+                  </Label>
                 </div>
               ))}
             </RadioGroup>
-            <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
-              <span>Muy bajo</span>
-              <span>Muy alto</span>
-            </div>
-          </div>
-        )
+          )
+        } catch (error) {
+          console.error('Error al parsear opciones de radio:', error)
+          return (
+            <Alert variant="destructive" className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error en la configuración</AlertTitle>
+              <AlertDescription>Esta pregunta tiene un formato de opciones inválido.</AlertDescription>
+            </Alert>
+          )
+        }
 
+      // Opción múltiple (Checkbox)
+      case 'checkbox':
+        try {
+          const options = question.options ? JSON.parse(question.options) : []
+          if (!Array.isArray(options) || options.length === 0) {
+            return (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error en la configuración</AlertTitle>
+                <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
+              </Alert>
+            )
+          }
+
+          const selectedOptions = Array.isArray(value) ? value : []
+
+          return (
+            <div className="space-y-3">
+              {options.map((option: {value: string, label: string}, index: number) => {
+                const isChecked = selectedOptions.includes(option.value)
+                return (
+                  <div
+                    key={index}
+                    className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                  >
+                    <Checkbox
+                      id={`${question.id}-${option.value}`}
+                      checked={isChecked}
+                      className="h-5 w-5 border-gray-300 text-blue-600"
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          handleAnswerChange(question.id, [...selectedOptions, option.value], question)
+                        } else {
+                          handleAnswerChange(
+                            question.id,
+                            selectedOptions.filter(item => item !== option.value),
+                            question
+                          )
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor={`${question.id}-${option.value}`}
+                      className="w-full cursor-pointer text-gray-700"
+                    >
+                      {option.label}
+                    </Label>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        } catch (error) {
+          console.error('Error al parsear opciones de checkbox:', error)
+          return (
+            <Alert variant="destructive" className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error en la configuración</AlertTitle>
+              <AlertDescription>Esta pregunta tiene un formato de opciones inválido.</AlertDescription>
+            </Alert>
+          )
+        }
+
+      // Escala numérica
+      case 'scale':
+        try {
+          let scaleConfig = { min: 1, max: 5, labels: [] }
+
+          if (question.options) {
+            const parsedOptions = JSON.parse(question.options)
+            if (typeof parsedOptions === 'object') {
+              scaleConfig = {
+                min: parsedOptions.min || 1,
+                max: parsedOptions.max || 5,
+                labels: parsedOptions.labels || []
+              }
+            }
+          }
+
+          const range = Array.from(
+            { length: scaleConfig.max - scaleConfig.min + 1 },
+            (_, i) => i + scaleConfig.min
+          )
+
+          return (
+            <div className="py-2">
+              <RadioGroup
+                value={value as string}
+                onValueChange={(val) => handleAnswerChange(question.id, val, question)}
+                className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              >
+                {range.map((rating) => (
+                  <div key={rating} className="flex flex-col items-center">
+                    <RadioGroupItem
+                      value={rating.toString()}
+                      id={`${question.id}-${rating}`}
+                      className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label
+                      htmlFor={`${question.id}-${rating}`}
+                      className="mt-2 cursor-pointer text-sm font-medium text-gray-700"
+                    >
+                      {rating}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              {scaleConfig.labels && scaleConfig.labels.length >= 2 && (
+                <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
+                  <span>{scaleConfig.labels[0]}</span>
+                  {scaleConfig.labels.length > 2 && (
+                    <span>{scaleConfig.labels[Math.floor(scaleConfig.labels.length / 2)]}</span>
+                  )}
+                  <span>{scaleConfig.labels[scaleConfig.labels.length - 1]}</span>
+                </div>
+              )}
+            </div>
+          )
+        } catch (error) {
+          console.error('Error al parsear opciones de escala:', error)
+          // Fallback a escala básica 1-5
+          return (
+            <div className="py-2">
+              <RadioGroup
+                value={value as string}
+                onValueChange={(val) => handleAnswerChange(question.id, val, question)}
+                className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+              >
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <div key={rating} className="flex flex-col items-center">
+                    <RadioGroupItem
+                      value={rating.toString()}
+                      id={`${question.id}-${rating}`}
+                      className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label
+                      htmlFor={`${question.id}-${rating}`}
+                      className="mt-2 cursor-pointer text-sm font-medium text-gray-700"
+                    >
+                      {rating}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+              <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
+                <span>Muy bajo</span>
+                <span>Muy alto</span>
+              </div>
+            </div>
+          )
+        }
+
+      // Lista desplegable (Dropdown)
+      case 'dropdown':
+        try {
+          const options = question.options ? JSON.parse(question.options) : []
+          if (!Array.isArray(options) || options.length === 0) {
+            return (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error en la configuración</AlertTitle>
+                <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
+              </Alert>
+            )
+          }
+
+          return (
+            <Select
+              value={value as string}
+              onValueChange={(val) => handleAnswerChange(question.id, val, question)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecciona una opción" />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option: {value: string, label: string}, index: number) => (
+                  <SelectItem key={index} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        } catch (error) {
+          console.error('Error al parsear opciones de dropdown:', error)
+          return (
+            <Alert variant="destructive" className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error en la configuración</AlertTitle>
+              <AlertDescription>Esta pregunta tiene un formato de opciones inválido.</AlertDescription>
+            </Alert>
+          )
+        }
+
+      // Tipo de pregunta no reconocido
       default:
-        return <Input
-          placeholder="Tu respuesta"
-          className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
+        console.warn(`Tipo de pregunta no soportado: ${question.question_type}`)
+        return (
+          <Input
+            value={value as string}
+            onChange={(e) => handleAnswerChange(question.id, e.target.value, question)}
+            placeholder="Tu respuesta"
+            className="border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
+        )
     }
   }
 
