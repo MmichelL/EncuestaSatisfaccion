@@ -366,26 +366,31 @@ export default function SurveyPage() {
 
   /**
    * Calcula el porcentaje de progreso de la encuesta basado en las secciones completadas
+   * y la sección actual
    *
-   * El progreso se calcula encontrando el porcentaje de descuento acumulativo máximo
-   * entre todas las secciones que el usuario ha completado. Esto permite mostrar
-   * al usuario cuánto descuento ha obtenido hasta el momento.
+   * El progreso se calcula como el máximo entre:
+   * 1. El porcentaje de descuento acumulativo de la sección actual
+   * 2. El porcentaje de descuento acumulativo máximo entre las secciones completadas
+   *
+   * Esto permite mostrar al usuario cuánto descuento ha obtenido hasta el momento
+   * y también refleja el progreso potencial al entrar en una nueva sección.
    */
   const calculateProgress = () => {
-    if (!sections || sections.length === 0) return 0
+    if (!sections || sections.length === 0 || currentSectionIndex < 0) return 0
 
-    // Si no hay secciones completadas, devolver 0
-    if (completedSections.length === 0) return 0
+    // Obtener el porcentaje potencial de la sección actual
+    const currentSectionPercentage = sections[currentSectionIndex]?.discount_percentage_cumulative ?? 0
 
-    // Encontrar el porcentaje de descuento acumulativo máximo entre las secciones completadas
-    let maxDiscount = 0
+    // Obtener el máximo porcentaje de las secciones ya completadas
+    let maxCompletedPercentage = 0
     sections.forEach(section => {
       if (completedSections.includes(section.id)) {
-        maxDiscount = Math.max(maxDiscount, section.discount_percentage_cumulative)
+        maxCompletedPercentage = Math.max(maxCompletedPercentage, section.discount_percentage_cumulative)
       }
     })
 
-    return maxDiscount
+    // Devolver el máximo entre el actual y el completado
+    return Math.max(currentSectionPercentage, maxCompletedPercentage)
   }
 
   // Navegar a la sección anterior
