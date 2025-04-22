@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
 // import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -102,6 +103,8 @@ export default function SurveyPage() {
   const [finalizing, setFinalizing] = useState(false)
   const [completionData, setCompletionData] = useState<CompletionData | null>(null)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [showProgressAnimation, setShowProgressAnimation] = useState(false)
+  const [sectionCompletedMessage, setSectionCompletedMessage] = useState<{show: boolean, reward: number} | null>(null)
 
   // Usar el hook personalizado para gestionar el progreso
   const {
@@ -314,9 +317,19 @@ export default function SurveyPage() {
       setFinalizing(true)
       setError(null)
 
+      // 1. Verificar que responseId no sea null y sea un número válido
+      if (!responseId || isNaN(parseInt(responseId, 10))) {
+        setError('Error interno: ID de respuesta inválido.');
+        setFinalizing(false);
+        return; // Detener la ejecución si el ID no es válido
+      }
+
+      // 2. Convertir a número y llamar a la función
+      const responseIdAsNumber = parseInt(responseId, 10);
+
       // Llamar a la Edge Function para finalizar la respuesta
       const { data: responseData, error } = await supabase.functions.invoke('finalize-survey-response', {
-        body: { responseId }
+        body: { response_id: responseIdAsNumber } // Enviar como número y usar snake_case
       })
 
       if (error) throw error
@@ -425,6 +438,12 @@ export default function SurveyPage() {
       return
     }
 
+    // Calcular el descuento específico de esta sección
+    const prevSectionPercentage = currentSectionIndex > 0
+      ? sections[currentSectionIndex - 1]?.discount_percentage_cumulative ?? 0
+      : 0
+    const sectionReward = currentSection.discount_percentage_cumulative - prevSectionPercentage
+
     // Marcar la sección como completada
     addCompletedSection(currentSection.id)
 
@@ -432,6 +451,24 @@ export default function SurveyPage() {
     if (responseId) {
       await updateLastSavedSection(currentSection.id)
     }
+
+    // Activar la animación de progreso
+    setShowProgressAnimation(true)
+
+    // Mostrar mensaje de sección completada si hay recompensa
+    if (sectionReward > 0) {
+      setSectionCompletedMessage({ show: true, reward: sectionReward })
+
+      // Ocultar el mensaje después de 3 segundos
+      setTimeout(() => {
+        setSectionCompletedMessage(null)
+      }, 3000)
+    }
+
+    // Desactivar la animación después de 1.5 segundos
+    setTimeout(() => {
+      setShowProgressAnimation(false)
+    }, 1500)
 
     // Avanzar a la siguiente sección
     setCurrentSectionIndex(currentSectionIndex + 1)
@@ -858,8 +895,14 @@ export default function SurveyPage() {
           )
         }
 
-        // Calcular el progreso
+        // Calcular el progreso y el descuento de la sección actual
         const progress = calculateProgress()
+
+        // Calcular el descuento específico de esta sección
+        const prevSectionPercentage = currentSectionIndex > 0
+          ? sections[currentSectionIndex - 1]?.discount_percentage_cumulative ?? 0
+          : 0
+        const sectionReward = currentSection.discount_percentage_cumulative - prevSectionPercentage
 
         return (
           <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-2xl">
@@ -876,11 +919,13 @@ export default function SurveyPage() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-gray-700">Progreso</span>
-                  <span className="text-blue-600">{progress}%</span>
+                  <span className={`text-blue-600 ${showProgressAnimation ? 'animate-pulse font-bold' : ''}`}>
+                    {progress}%
+                  </span>
                 </div>
                 <div className="relative h-4 w-full overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full w-full flex-1 bg-blue-600 rounded-full transition-all"
+                    className={`h-full w-full flex-1 bg-blue-600 rounded-full transition-all duration-700 ${showProgressAnimation ? 'animate-pulse' : ''}`}
                     style={{ transform: `translateX(-${100 - progress}%)` }}
                   />
                 </div>
@@ -892,7 +937,23 @@ export default function SurveyPage() {
                 {currentSection.description && (
                   <p className="text-gray-600">{currentSection.description}</p>
                 )}
+                {sectionReward > 0 && (
+                  <Badge variant="success" className="mt-3 py-1.5 px-3 text-sm font-medium">
+                    ¡Al completar esta sección obtienes un {sectionReward}% extra! (Total acumulado: {currentSection.discount_percentage_cumulative}%)
+                  </Badge>
+                )}
               </div>
+
+              {/* Mensaje de sección completada */}
+              {sectionCompletedMessage?.show && (
+                <Alert variant="success" className="border border-green-200 bg-green-50 text-green-800 animate-fadeIn">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <AlertTitle className="font-medium">¡Sección completada!</AlertTitle>
+                  <AlertDescription>
+                    Has obtenido un {sectionCompletedMessage.reward}% adicional de descuento.
+                  </AlertDescription>
+                </Alert>
+              )}
 
               {/* Mensaje de validación */}
               {validationError && (
