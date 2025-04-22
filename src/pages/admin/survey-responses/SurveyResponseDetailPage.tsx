@@ -73,20 +73,47 @@ export default function SurveyResponseDetailPage() {
         setLoading(true)
         setError(null)
 
-        const { data, error } = await supabase
+        // 1. Consulta principal: obtener datos básicos de la respuesta y relaciones de primer nivel
+        const { data: responseData, error: responseError } = await supabase
           .from('survey_responses')
           .select(`
             *,
-            survey:surveys(*),
-            product_code:product_codes(*),
-            answers(*, question:questions(*))
+            survey:surveys(id, name, description),
+            product_code:product_codes!product_code_id(id, code_value, batch_id)
           `)
           .eq('id', id)
           .single()
 
-        if (error) throw error
+        if (responseError) throw responseError
+        if (!responseData) throw new Error('Respuesta no encontrada.')
 
-        setResponse(data)
+        // Guardar datos básicos de la respuesta
+        let detailedResponse: SurveyResponse = {
+          ...responseData,
+          survey: responseData.survey,
+          product_code: responseData.product_code,
+          answers: [] // Inicializa answers vacío
+        }
+
+        // 2. Segunda consulta: obtener las respuestas y sus preguntas asociadas
+        const { data: answersData, error: answersError } = await supabase
+          .from('answers')
+          .select(`
+            *,
+            question:questions(*) // Obtener la pregunta relacionada a cada respuesta
+          `)
+          .eq('response_id', id) // Filtrar por el ID de la respuesta actual
+
+        if (answersError) {
+          console.warn('No se pudieron cargar las respuestas detalladas:', answersError)
+          // Continuar sin las respuestas en lugar de fallar completamente
+        } else {
+          // Añadir las respuestas obtenidas al objeto de respuesta detallada
+          detailedResponse.answers = answersData || []
+        }
+
+        // Establecer el estado final con todos los datos
+        setResponse(detailedResponse)
       } catch (error) {
         console.error('Error al cargar los detalles de la respuesta:', error)
         setError('No se pudieron cargar los detalles de la respuesta. Por favor, intenta de nuevo.')
@@ -207,9 +234,9 @@ export default function SurveyResponseDetailPage() {
                     <Calendar className="h-4 w-4 text-gray-500" />
                     <Label>Fecha de inicio</Label>
                   </div>
-                  <Input 
-                    value={format(new Date(response.start_time), 'dd/MM/yyyy HH:mm:ss', { locale: es })} 
-                    readOnly 
+                  <Input
+                    value={format(new Date(response.start_time), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+                    readOnly
                   />
                 </div>
 
@@ -219,9 +246,9 @@ export default function SurveyResponseDetailPage() {
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <Label>Fecha de finalización</Label>
                     </div>
-                    <Input 
-                      value={format(new Date(response.completion_time), 'dd/MM/yyyy HH:mm:ss', { locale: es })} 
-                      readOnly 
+                    <Input
+                      value={format(new Date(response.completion_time), 'dd/MM/yyyy HH:mm:ss', { locale: es })}
+                      readOnly
                     />
                   </div>
                 )}
@@ -232,9 +259,9 @@ export default function SurveyResponseDetailPage() {
                       <Percent className="h-4 w-4 text-gray-500" />
                       <Label>Porcentaje de descuento obtenido</Label>
                     </div>
-                    <Input 
-                      value={`${response.discount_percentage_achieved}%`} 
-                      readOnly 
+                    <Input
+                      value={`${response.discount_percentage_achieved}%`}
+                      readOnly
                     />
                   </div>
                 )}
@@ -245,9 +272,9 @@ export default function SurveyResponseDetailPage() {
                       <Gift className="h-4 w-4 text-gray-500" />
                       <Label>Código de descuento generado</Label>
                     </div>
-                    <Input 
-                      value={response.generated_discount_code} 
-                      readOnly 
+                    <Input
+                      value={response.generated_discount_code}
+                      readOnly
                       className="font-mono"
                     />
                   </div>
@@ -261,9 +288,9 @@ export default function SurveyResponseDetailPage() {
                       <Tag className="h-4 w-4 text-gray-500" />
                       <Label>Código de producto utilizado</Label>
                     </div>
-                    <Input 
-                      value={response.product_code.code_value} 
-                      readOnly 
+                    <Input
+                      value={response.product_code.code_value}
+                      readOnly
                       className="font-mono"
                     />
                   </div>
@@ -275,9 +302,9 @@ export default function SurveyResponseDetailPage() {
                       <User className="h-4 w-4 text-gray-500" />
                       <Label>Nombre del cliente</Label>
                     </div>
-                    <Input 
-                      value={response.customer_name} 
-                      readOnly 
+                    <Input
+                      value={response.customer_name}
+                      readOnly
                     />
                   </div>
                 )}
@@ -288,9 +315,9 @@ export default function SurveyResponseDetailPage() {
                       <User className="h-4 w-4 text-gray-500" />
                       <Label>Email del cliente</Label>
                     </div>
-                    <Input 
-                      value={response.customer_email} 
-                      readOnly 
+                    <Input
+                      value={response.customer_email}
+                      readOnly
                     />
                   </div>
                 )}
@@ -301,9 +328,9 @@ export default function SurveyResponseDetailPage() {
                       <User className="h-4 w-4 text-gray-500" />
                       <Label>Teléfono del cliente</Label>
                     </div>
-                    <Input 
-                      value={response.customer_phone} 
-                      readOnly 
+                    <Input
+                      value={response.customer_phone}
+                      readOnly
                     />
                   </div>
                 )}
