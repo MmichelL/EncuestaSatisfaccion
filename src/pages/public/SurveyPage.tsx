@@ -497,107 +497,85 @@ export default function SurveyPage() {
 
       // Opción única (Radio)
       case 'radio':
-        try {
-          const options = question.options ? JSON.parse(question.options) : []
-          if (!Array.isArray(options) || options.length === 0) {
-            return (
-              <Alert variant="destructive" className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error en la configuración</AlertTitle>
-                <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
-              </Alert>
-            )
-          }
-
-          return (
-            <RadioGroup
-              value={value as string}
-              onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-              className="space-y-3"
-            >
-              {options.map((option: {value: string, label: string}, index: number) => (
-                <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
-                  <RadioGroupItem value={option.value} id={`${question.id}-${option.value}`} className="h-5 w-5 border-gray-300 text-blue-600" />
-                  <Label htmlFor={`${question.id}-${option.value}`} className="w-full cursor-pointer text-gray-700">
-                    {option.label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          )
-        } catch (error) {
-          console.error('Error al parsear opciones de radio:', error)
+        const singleOptions = question.options || []
+        if (!Array.isArray(singleOptions) || singleOptions.length === 0) {
           return (
             <Alert variant="destructive" className="mt-2">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error en la configuración</AlertTitle>
-              <AlertDescription>Esta pregunta tiene un formato de opciones inválido.</AlertDescription>
+              <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
             </Alert>
           )
         }
+
+        return (
+          <RadioGroup
+            value={value as string}
+            onValueChange={(val) => handleAnswerChange(question.id, val, question)}
+            className="space-y-3"
+          >
+            {singleOptions.map((option: {value: string, label: string}, index: number) => (
+              <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
+                <RadioGroupItem value={option.value} id={`${question.id}-${option.value}`} className="h-5 w-5 border-gray-300 text-blue-600" />
+                <Label htmlFor={`${question.id}-${option.value}`} className="w-full cursor-pointer text-gray-700">
+                  {option.label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+        )
 
       // Opción múltiple (Checkbox)
       case 'checkbox':
-        try {
-          const options = question.options ? JSON.parse(question.options) : []
-          if (!Array.isArray(options) || options.length === 0) {
-            return (
-              <Alert variant="destructive" className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error en la configuración</AlertTitle>
-                <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
-              </Alert>
-            )
-          }
-
-          const selectedOptions = Array.isArray(value) ? value : []
-
-          return (
-            <div className="space-y-3">
-              {options.map((option: {value: string, label: string}, index: number) => {
-                const isChecked = selectedOptions.includes(option.value)
-                return (
-                  <div
-                    key={index}
-                    className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
-                  >
-                    <Checkbox
-                      id={`${question.id}-${option.value}`}
-                      checked={isChecked}
-                      className="h-5 w-5 border-gray-300 text-blue-600"
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleAnswerChange(question.id, [...selectedOptions, option.value], question)
-                        } else {
-                          handleAnswerChange(
-                            question.id,
-                            selectedOptions.filter(item => item !== option.value),
-                            question
-                          )
-                        }
-                      }}
-                    />
-                    <Label
-                      htmlFor={`${question.id}-${option.value}`}
-                      className="w-full cursor-pointer text-gray-700"
-                    >
-                      {option.label}
-                    </Label>
-                  </div>
-                )
-              })}
-            </div>
-          )
-        } catch (error) {
-          console.error('Error al parsear opciones de checkbox:', error)
+        const multipleOptions = question.options || []
+        if (!Array.isArray(multipleOptions) || multipleOptions.length === 0) {
           return (
             <Alert variant="destructive" className="mt-2">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error en la configuración</AlertTitle>
-              <AlertDescription>Esta pregunta tiene un formato de opciones inválido.</AlertDescription>
+              <AlertDescription>Esta pregunta no tiene opciones configuradas correctamente.</AlertDescription>
             </Alert>
           )
         }
+
+        const selectedOptions = Array.isArray(value) ? value : []
+
+        return (
+          <div className="space-y-3">
+            {multipleOptions.map((option: {value: string, label: string}, index: number) => {
+              const isChecked = selectedOptions.includes(option.value)
+              return (
+                <div
+                  key={index}
+                  className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                >
+                  <Checkbox
+                    id={`${question.id}-${option.value}`}
+                    checked={isChecked}
+                    className="h-5 w-5 border-gray-300 text-blue-600"
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleAnswerChange(question.id, [...selectedOptions, option.value], question)
+                      } else {
+                        handleAnswerChange(
+                          question.id,
+                          selectedOptions.filter(item => item !== option.value),
+                          question
+                        )
+                      }
+                    }}
+                  />
+                  <Label
+                    htmlFor={`${question.id}-${option.value}`}
+                    className="w-full cursor-pointer text-gray-700"
+                  >
+                    {option.label}
+                  </Label>
+                </div>
+              )
+            })}
+          </div>
+        )
 
       // Escala numérica
       case 'scale':
@@ -605,7 +583,7 @@ export default function SurveyPage() {
           let scaleConfig = { min: 1, max: 5, labels: [] }
 
           if (question.options) {
-            const parsedOptions = JSON.parse(question.options)
+            const parsedOptions = question.options
             if (typeof parsedOptions === 'object') {
               scaleConfig = {
                 min: parsedOptions.min || 1,
@@ -691,7 +669,7 @@ export default function SurveyPage() {
       // Lista desplegable (Dropdown)
       case 'dropdown':
         try {
-          const options = question.options ? JSON.parse(question.options) : []
+          const options = question.options || []
           if (!Array.isArray(options) || options.length === 0) {
             return (
               <Alert variant="destructive" className="mt-2">
