@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Progress } from '@/components/ui/progress'
+// import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -515,7 +515,7 @@ export default function SurveyPage() {
             className="space-y-3"
           >
             {singleOptions.map((option: {value: string, label: string}, index: number) => (
-              <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-3 shadow-sm transition-colors hover:bg-gray-50">
+              <div key={index} className="flex items-center space-x-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:bg-gray-50 cursor-pointer">
                 <RadioGroupItem value={option.value} id={`${question.id}-${option.value}`} className="h-5 w-5 border-gray-300 text-blue-600" />
                 <Label htmlFor={`${question.id}-${option.value}`} className="w-full cursor-pointer text-gray-700">
                   {option.label}
@@ -547,7 +547,7 @@ export default function SurveyPage() {
               return (
                 <div
                   key={index}
-                  className={`flex items-center space-x-3 rounded-md border p-3 shadow-sm transition-colors ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
+                  className={`flex items-center space-x-3 rounded-md border p-4 shadow-sm transition-colors cursor-pointer ${isChecked ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-white hover:bg-gray-50'}`}
                 >
                   <Checkbox
                     id={`${question.id}-${option.value}`}
@@ -603,14 +603,14 @@ export default function SurveyPage() {
               <RadioGroup
                 value={value as string}
                 onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-                className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                className="flex justify-between space-x-4 md:space-x-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
               >
                 {range.map((rating) => (
                   <div key={rating} className="flex flex-col items-center">
                     <RadioGroupItem
                       value={rating.toString()}
                       id={`${question.id}-${rating}`}
-                      className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-8 w-8 md:h-10 md:w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <Label
                       htmlFor={`${question.id}-${rating}`}
@@ -622,7 +622,7 @@ export default function SurveyPage() {
                 ))}
               </RadioGroup>
               {scaleConfig.labels && scaleConfig.labels.length >= 2 && (
-                <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
+                <div className="mt-2 flex justify-between px-4 text-xs font-medium text-gray-600">
                   <span>{scaleConfig.labels[0]}</span>
                   {scaleConfig.labels.length > 2 && (
                     <span>{scaleConfig.labels[Math.floor(scaleConfig.labels.length / 2)]}</span>
@@ -640,14 +640,14 @@ export default function SurveyPage() {
               <RadioGroup
                 value={value as string}
                 onValueChange={(val) => handleAnswerChange(question.id, val, question)}
-                className="flex justify-between space-x-2 rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+                className="flex justify-between space-x-4 md:space-x-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
               >
                 {[1, 2, 3, 4, 5].map((rating) => (
                   <div key={rating} className="flex flex-col items-center">
                     <RadioGroupItem
                       value={rating.toString()}
                       id={`${question.id}-${rating}`}
-                      className="h-10 w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      className="h-8 w-8 md:h-10 md:w-10 border-2 border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <Label
                       htmlFor={`${question.id}-${rating}`}
@@ -658,7 +658,7 @@ export default function SurveyPage() {
                   </div>
                 ))}
               </RadioGroup>
-              <div className="mt-2 flex justify-between px-4 text-xs text-gray-500">
+              <div className="mt-2 flex justify-between px-4 text-xs font-medium text-gray-600">
                 <span>Muy bajo</span>
                 <span>Muy alto</span>
               </div>
@@ -727,7 +727,7 @@ export default function SurveyPage() {
     switch (pageState) {
       case 'loading':
         return (
-          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-center text-xl text-gray-800">Cargando encuesta...</CardTitle>
             </CardHeader>
@@ -739,7 +739,7 @@ export default function SurveyPage() {
 
       case 'not-found':
         return (
-          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-xl">
             <CardHeader className="pb-4">
               <CardTitle className="text-center text-xl text-gray-800">Encuesta no encontrada</CardTitle>
             </CardHeader>
@@ -756,14 +756,14 @@ export default function SurveyPage() {
 
       case 'code-required':
         return (
-          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
-            <CardHeader className="space-y-2 pb-4">
-              <CardTitle className="text-center text-xl text-gray-800">{survey?.name}</CardTitle>
-              <CardDescription className="text-center">
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-xl">
+            <CardHeader className="space-y-3 pb-4">
+              <CardTitle className="text-center text-2xl md:text-3xl text-gray-800">{survey?.name}</CardTitle>
+              <CardDescription className="text-center mb-4">
                 Para acceder a esta encuesta, por favor ingresa el código de producto.
               </CardDescription>
             </CardHeader>
-            <CardContent className="px-6 pb-8 pt-2">
+            <CardContent className="px-6 pb-8 pt-4 md:p-8">
               {error && (
                 <Alert variant="destructive" className="mb-6 border border-red-200 bg-red-50 text-red-800">
                   <AlertCircle className="h-4 w-4 text-red-600" />
@@ -822,7 +822,7 @@ export default function SurveyPage() {
         // Si no hay secciones, mostrar mensaje de carga
         if (!sections || sections.length === 0) {
           return (
-            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
+            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-2xl">
               <CardHeader className="border-b border-gray-100 pb-4">
                 <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
               </CardHeader>
@@ -838,7 +838,7 @@ export default function SurveyPage() {
         const currentSection = sections[currentSectionIndex]
         if (!currentSection) {
           return (
-            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
+            <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-2xl">
               <CardHeader className="border-b border-gray-100 pb-4">
                 <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
               </CardHeader>
@@ -857,28 +857,33 @@ export default function SurveyPage() {
         const progress = calculateProgress()
 
         return (
-          <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-lg">
-            <CardHeader className="border-b border-gray-100 pb-4">
-              <CardTitle className="text-xl text-gray-800">{survey?.name}</CardTitle>
+          <Card className="mx-auto w-full max-w-3xl overflow-hidden border-none shadow-2xl">
+            <CardHeader className="border-b border-gray-100 pb-4 text-center">
+              <CardTitle className="text-2xl md:text-3xl text-gray-800">{survey?.name}</CardTitle>
               {survey?.description && (
-                <CardDescription className="mt-1 text-gray-600">
+                <CardDescription className="mt-2 mb-4 text-gray-600">
                   {survey.description}
                 </CardDescription>
               )}
             </CardHeader>
-            <CardContent className="space-y-8 p-6">
+            <CardContent className="space-y-8 p-6 md:p-8">
               {/* Barra de progreso */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm font-medium">
                   <span className="text-gray-700">Progreso</span>
                   <span className="text-blue-600">{progress}%</span>
                 </div>
-                <Progress value={progress} className="h-3 bg-gray-100" />
+                <div className="relative h-4 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full w-full flex-1 bg-blue-600 rounded-full transition-all"
+                    style={{ transform: `translateX(-${100 - progress}%)` }}
+                  />
+                </div>
               </div>
 
               {/* Título y descripción de la sección */}
-              <div className="space-y-2 rounded-lg bg-blue-50 p-4">
-                <h2 className="text-lg font-semibold text-gray-800">{currentSection.title}</h2>
+              <div className="space-y-2 rounded-lg bg-blue-50 p-5">
+                <h2 className="text-lg md:text-xl font-semibold text-gray-800">{currentSection.title}</h2>
                 {currentSection.description && (
                   <p className="text-gray-600">{currentSection.description}</p>
                 )}
@@ -896,7 +901,7 @@ export default function SurveyPage() {
               {/* Preguntas */}
               <div className="space-y-8">
                 {currentSection.questions.map((question, index) => (
-                  <div key={question.id} className="space-y-3 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                  <div key={question.id} className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm mb-6">
                     <div className="flex items-center gap-1">
                       <label className="font-medium text-gray-800">
                         {index + 1}. {question.question_text}
@@ -910,7 +915,7 @@ export default function SurveyPage() {
                 ))}
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between border-t border-gray-100 bg-gray-50 px-6 py-4">
+            <CardFooter className="flex justify-between items-center border-t border-gray-100 bg-gray-50 px-6 py-4 md:px-8 md:py-5">
               <Button
                 variant="outline"
                 onClick={goToPreviousSection}
@@ -955,7 +960,7 @@ export default function SurveyPage() {
       case 'survey-completed':
         if (!completionData) {
           return (
-            <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+            <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-center text-xl text-gray-800">Error</CardTitle>
               </CardHeader>
@@ -980,7 +985,7 @@ export default function SurveyPage() {
         }
 
         return (
-          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-lg">
+          <Card className="mx-auto w-full max-w-md overflow-hidden border-none shadow-xl">
             <CardHeader className="bg-gradient-to-r from-green-50 to-green-100 pb-6 pt-8">
               <div className="mb-4 flex justify-center">
                 <div className="rounded-full bg-white p-3 shadow-md">
@@ -992,7 +997,7 @@ export default function SurveyPage() {
                 Tu opinión es muy valiosa para nosotros.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6 p-6">
+            <CardContent className="space-y-6 p-6 md:p-8">
               <Alert variant="success" className="border-green-200 bg-green-50 text-green-800">
                 <CheckCircle className="h-5 w-5 text-green-600" />
                 <AlertTitle className="font-semibold">Descuento obtenido: {completionData.discount_percentage}%</AlertTitle>
@@ -1009,7 +1014,7 @@ export default function SurveyPage() {
                   <code className="font-mono text-xl font-bold text-blue-700">{completionData.discount_code}</code>
                   <Button
                     size="sm"
-                    variant={copySuccess ? "success" : "outline"}
+                    variant="outline"
                     onClick={copyDiscountCode}
                     className={`flex items-center gap-1.5 ${copySuccess ? 'bg-green-100 text-green-700 hover:bg-green-100' : 'border-gray-300'}`}
                   >
@@ -1039,8 +1044,8 @@ export default function SurveyPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-8 px-4 sm:py-12 md:py-16">
-      <div className="mx-auto max-w-3xl">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-12 px-4 sm:py-14 md:py-16">
+      <div className="mx-auto max-w-3xl w-full">
         {renderContent()}
       </div>
     </div>
